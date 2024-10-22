@@ -1,19 +1,27 @@
 import React, { useState, useEffect, useRef } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { hat, shirt, rifle, sport_shoe, trousers, watch } from "./images/images";
+import {
+  hat,
+  shirt,
+  rifle,
+  sport_shoe,
+  trousers,
+  watch,
+} from "./images/images";
 import { CiCircleRemove } from "react-icons/ci";
+import { Menu, X, ChevronLeft } from "lucide-react";
 
-// Drag types
 const ItemTypes = {
   INVENTORY_ITEM: "inventory_item",
   QUICK_ITEM: "quick_item",
 };
 
 const InventoryApp = () => {
+  // ... (previous state declarations remain the same)
   const initialInventoryItems = [
     { name: "Money", icon: "💵", type: "currency", quantity: 10 },
-    { name: "Badge LSPO", icon: "👮‍♂️", type: "accessory", quantity: 1 },
+    { name: "Badge LSPO", icon: "👮‍♂", type: "accessory", quantity: 1 },
     { name: "Driver's license", icon: "🪪", type: "document", quantity: 1 },
     { name: "Boombox", icon: "📻", type: "gadget", quantity: 10 },
     { name: "Water Bottle", icon: "🥤", type: "consumable", quantity: 10 },
@@ -24,39 +32,95 @@ const InventoryApp = () => {
     { name: "SMG", icon: "🔫", type: "weapon", quantity: 1 },
   ];
 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("inventory");
+  const [quickItems, setQuickItems] = useState(Array(6).fill(null));
   const [inventoryItems, setInventoryItems] = useState(initialInventoryItems);
-  const [quickItems, setQuickItems] = useState(Array(6).fill(null)); // Quick slots
-
-  // Handle dropping item into quick slots
   const moveItemToQuickSlot = (item, index) => {
     const updatedQuickItems = [...quickItems];
-    updatedQuickItems[index] = item;
+    updatedQuickItems[index] = { ...item }; // Create a copy of the item
     setQuickItems(updatedQuickItems);
 
-    // Remove from inventory
-    const updatedInventory = inventoryItems.filter(
-      (invItem) => invItem.name !== item.name
+    // Remove or decrease quantity from inventory
+    const updatedInventory = [...inventoryItems];
+    const inventoryIndex = updatedInventory.findIndex(
+      (i) => i.name === item.name,
     );
-    setInventoryItems(updatedInventory);
+
+    if (inventoryIndex !== -1) {
+      if (updatedInventory[inventoryIndex].quantity > 1) {
+        updatedInventory[inventoryIndex].quantity -= 1;
+      } else {
+        updatedInventory.splice(inventoryIndex, 1);
+      }
+      setInventoryItems(updatedInventory);
+    }
   };
 
-  // Handle removing item from quick slots
   const removeItemFromQuickSlot = (index) => {
     const updatedQuickItems = [...quickItems];
     const itemToRemove = updatedQuickItems[index];
     updatedQuickItems[index] = null;
     setQuickItems(updatedQuickItems);
-    setInventoryItems([...inventoryItems, itemToRemove]); // Add back to inventory
+
+    // Add back to inventory with proper quantity handling
+    const existingItem = inventoryItems.find(
+      (item) => item.name === itemToRemove.name,
+    );
+    if (existingItem) {
+      setInventoryItems(
+        inventoryItems.map((item) =>
+          item.name === itemToRemove.name
+            ? { ...item, quantity: item.quantity + 1 }
+            : item,
+        ),
+      );
+    } else {
+      setInventoryItems([...inventoryItems, { ...itemToRemove, quantity: 1 }]);
+    }
   };
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="min-h-screen bg-gray-800 text-white p-4">
-        <div className="flex space-x-4">
+      <div className="min-h-screen bg-gray-800 text-white">
+        {/* Mobile Header with Navigation */}
+        <div className="lg:hidden">
+          <div className="flex items-center justify-between p-4 bg-gray-900 sticky top-0 z-10">
+            <h1 className="text-xl font-bold">Inventory</h1>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 hover:bg-gray-700 rounded-lg"
+            >
+              {isMobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
+            </button>
+          </div>
+
+          {/* Mobile Tab Navigation */}
+          <div className="flex justify-around border-b border-gray-700 sticky top-16 bg-gray-800 z-10">
+            {["inventory", "quickItems", "clothing"].map((tab) => (
+              <button
+                key={tab}
+                className={`px-4 py-3 flex-1 text-sm font-medium transition-colors
+                  ${activeTab === tab ? "bg-gray-700 text-white" : "text-gray-400 hover:text-white"}
+                `}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Desktop Layout */}
+        <div className="hidden lg:flex p-4 space-x-4">
           {/* Quick Items Section */}
-          <div className="w-1/5">
-            <h3 className="text-lg font-bold mb-4">Quick Items</h3>
-            <div className="grid grid-cols-1 gap-4">
+          <div className="w-1/5 space-y-4">
+            <h3 className="text-lg font-bold">Quick Items</h3>
+            <div className="grid grid-cols-2 gap-3">
               {quickItems.map((item, index) => (
                 <QuickSlot
                   key={index}
@@ -64,15 +128,17 @@ const InventoryApp = () => {
                   item={item}
                   moveItemToQuickSlot={moveItemToQuickSlot}
                   removeItem={removeItemFromQuickSlot}
+                  setQuickItems={setQuickItems}
+                  quickItems={quickItems}
                 />
               ))}
             </div>
           </div>
 
           {/* Inventory Section */}
-          <div className="w-3/5">
-            <h3 className="text-lg font-bold mb-4">Inventory</h3>
-            <div className="grid grid-cols-4 gap-4">
+          <div className="w-3/5 space-y-4">
+            <h3 className="text-lg font-bold">Inventory</h3>
+            <div className="grid grid-cols-4 gap-3">
               {inventoryItems.map((item, index) => (
                 <InventoryItem
                   key={index}
@@ -85,14 +151,45 @@ const InventoryApp = () => {
           </div>
 
           {/* Clothing Section */}
-          <div className="w-1/5">
-            <h3 className="text-lg font-bold mb-4">Clothing</h3>
-            <div className="grid grid-cols-1 gap-4">
-              <ClothingSlot name={hat} />
-              <ClothingSlot name={shirt} />
-              <ClothingSlot name={trousers} />
-              <ClothingSlot name={sport_shoe} />
-            </div>
+          <div className="w-1/5 space-y-4">
+            <h3 className="text-lg font-bold">Clothing</h3>
+            <ClothingSection />
+          </div>
+        </div>
+
+        {/* Mobile Content */}
+        <div className="lg:hidden p-4">
+          <div className="space-y-4">
+            {activeTab === "inventory" && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {inventoryItems.map((item, index) => (
+                  <InventoryItem
+                    key={index}
+                    item={item}
+                    setInventoryItems={setInventoryItems}
+                    inventoryItems={inventoryItems}
+                  />
+                ))}
+              </div>
+            )}
+
+            {activeTab === "quickItems" && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {quickItems.map((item, index) => (
+                  <QuickSlot
+                    key={index}
+                    index={index}
+                    item={item}
+                    moveItemToQuickSlot={moveItemToQuickSlot}
+                    removeItem={removeItemFromQuickSlot}
+                    setQuickItems={setQuickItems}
+                    quickItems={quickItems}
+                  />
+                ))}
+              </div>
+            )}
+
+            {activeTab === "clothing" && <ClothingSection />}
           </div>
         </div>
       </div>
@@ -100,11 +197,103 @@ const InventoryApp = () => {
   );
 };
 
-// Inventory Item Component with right-click options
+// Separate Clothing Section Component for reusability
+const ClothingSection = () => (
+  <div className="bg-gray-700 p-4 rounded-lg">
+    <div className="grid grid-cols-3 gap-3">
+      <div className="col-start-2">
+        <ClothingSlot name={hat} label="Hat" />
+      </div>
+      <div></div>
+      <div>
+        <ClothingSlot name={watch} label="Watch" />
+      </div>
+      <div>
+        <ClothingSlot name={shirt} label="Shirt" />
+      </div>
+      <div>
+        <ClothingSlot name={rifle} label="Weapon" />
+      </div>
+      <div className="col-start-2">
+        <ClothingSlot name={trousers} label="Pants" />
+      </div>
+      <div className="col-start-2">
+        <ClothingSlot name={sport_shoe} label="Shoes" />
+      </div>
+    </div>
+  </div>
+);
+
+const ItemContextMenu = ({ onUse, onGive, users, onClose }) => {
+  const menuRef = useRef(null);
+  const [showUsers, setShowUsers] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div
+        ref={menuRef}
+        className="bg-gray-800 text-white rounded-lg shadow-lg w-full max-w-xs"
+      >
+        <div className="p-2">
+          {showUsers && (
+            <button
+              className="flex items-center space-x-2 w-full px-4 py-3 text-gray-400 hover:text-white"
+              onClick={() => setShowUsers(false)}
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Back</span>
+            </button>
+          )}
+
+          {!showUsers ? (
+            <>
+              <button
+                className="block w-full text-left px-4 py-3 hover:bg-gray-700 rounded-lg"
+                onClick={onUse}
+              >
+                Use
+              </button>
+              <button
+                className="block w-full text-left px-4 py-3 hover:bg-gray-700 rounded-lg"
+                onClick={() => setShowUsers(true)}
+              >
+                Give
+              </button>
+            </>
+          ) : (
+            <div>
+              {users.map((user, index) => (
+                <button
+                  key={index}
+                  className="block w-full text-left px-4 py-3 hover:bg-gray-700 rounded-lg"
+                  onClick={() => onGive(user)}
+                >
+                  {user}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const InventoryItem = ({ item, setInventoryItems, inventoryItems }) => {
-  const [showContextMenu, setShowContextMenu] = useState(false);
-  const [showGiveOptions, setShowGiveOptions] = useState(false);
-  const contextMenuRef = useRef(null);
+  const [contextMenu, setContextMenu] = useState(false);
+  const [longPressTimer, setLongPressTimer] = useState(null);
+  const users = ["John", "Doe", "Alice", "Bob"];
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.INVENTORY_ITEM,
@@ -114,117 +303,165 @@ const InventoryItem = ({ item, setInventoryItems, inventoryItems }) => {
     }),
   }));
 
-  const users = ["John", "Doe", "Alice", "Bob"]; // Example users
-
-  const handleContextMenu = (e) => {
-    e.preventDefault();
-    setShowContextMenu(!showContextMenu);
+  const handleTouchStart = () => {
+    const timer = setTimeout(() => setContextMenu(true), 500);
+    setLongPressTimer(timer);
   };
 
-  const handleClickOutside = (e) => {
-    if (contextMenuRef.current && !contextMenuRef.current.contains(e.target)) {
-      setShowContextMenu(false);
-      setShowGiveOptions(false);
+  const handleTouchEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
     }
-  };
-
-  useEffect(() => {
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  const handleUse = () => {
-    if (item.quantity > 1) {
-      setInventoryItems(
-        inventoryItems.map((invItem) =>
-          invItem.name === item.name
-            ? { ...invItem, quantity: invItem.quantity - 1 }
-            : invItem
-        )
-      );
-    } else {
-      setInventoryItems(inventoryItems.filter((invItem) => invItem.name !== item.name));
-    }
-    setShowContextMenu(false); // Close context menu
-  };
-
-  const handleGive = () => {
-    setShowGiveOptions(true);
-    setShowContextMenu(false);
   };
 
   return (
     <div
       ref={drag}
-      className={`relative flex flex-col items-center bg-gray-700 p-4 rounded-md ${
-        isDragging ? "opacity-50" : ""
-      }`}
-      onContextMenu={handleContextMenu}
+      className={`relative flex flex-col items-center justify-center bg-gray-700 p-3 rounded-lg
+        ${isDragging ? "opacity-50" : ""} hover:bg-gray-600 transition-colors duration-200
+        aspect-square touch-manipulation`}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        setContextMenu(true);
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
-      <span className="text-4xl">{item.icon}</span>
-      <span className="mt-2 text-sm">
-        {item.name} ({item.quantity})
+      <span className="text-2xl sm:text-3xl lg:text-4xl mb-1">{item.icon}</span>
+      <span className="text-xs sm:text-sm text-center truncate w-full px-1">
+        {item.name}
       </span>
+      <span className="text-xs text-gray-400">Qty: {item.quantity}</span>
 
-      {showContextMenu && (
-        <div
-          ref={contextMenuRef}
-          className="absolute top-10 left-0 bg-gray-800 text-white p-2 rounded shadow-md z-10"
-        >
-          <button onClick={handleUse} className="block w-full text-left">Use</button>
-          <button onClick={handleGive} className="block w-full text-left">Give</button>
-        </div>
-      )}
-
-      {showGiveOptions && (
-        <div className="absolute top-10 left-0 bg-gray-800 text-white p-2 rounded shadow-md z-10">
-          {users.map((user, index) => (
-            <button key={index} className="block w-full text-left">
-              Give to {user}
-            </button>
-          ))}
-        </div>
+      {contextMenu && (
+        <ItemContextMenu
+          onUse={() => {
+            if (item.quantity > 1) {
+              setInventoryItems(
+                inventoryItems.map((invItem) =>
+                  invItem.name === item.name
+                    ? { ...invItem, quantity: invItem.quantity - 1 }
+                    : invItem,
+                ),
+              );
+            } else {
+              setInventoryItems(
+                inventoryItems.filter((invItem) => invItem.name !== item.name),
+              );
+            }
+            setContextMenu(false);
+          }}
+          onGive={(user) => {
+            setContextMenu(false);
+          }}
+          users={users}
+          onClose={() => setContextMenu(false)}
+        />
       )}
     </div>
   );
 };
 
-// Quick Slot Component
-const QuickSlot = ({ index, item, moveItemToQuickSlot, removeItem }) => {
+const QuickSlot = ({
+  index,
+  item,
+  moveItemToQuickSlot,
+  removeItem,
+  setQuickItems,
+  quickItems,
+}) => {
+  const [contextMenu, setContextMenu] = useState(false);
+  const [longPressTimer, setLongPressTimer] = useState(null);
+  const users = ["John", "Doe", "Alice", "Bob"];
+
   const [, drop] = useDrop({
     accept: ItemTypes.INVENTORY_ITEM,
     drop: (draggedItem) => moveItemToQuickSlot(draggedItem, index),
   });
 
+  const handleTouchStart = () => {
+    if (!item) return;
+    const timer = setTimeout(() => setContextMenu(true), 500);
+    setLongPressTimer(timer);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
   return (
     <div
       ref={drop}
-      className="flex flex-col items-center bg-gray-700 p-4 rounded-md"
+      className="relative aspect-square flex flex-col items-center justify-center
+        bg-gray-700 p-3 rounded-lg hover:bg-gray-600 transition-colors duration-200
+        touch-manipulation"
+      onContextMenu={(e) => {
+        if (!item) return;
+        e.preventDefault();
+        setContextMenu(true);
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       {item ? (
         <>
           <button
-            className="ml-auto mt-2 bg-red-500 text-sm px-2 py-1 rounded-md"
+            className="absolute top-1 right-1 text-red-500 hover:text-red-400 p-1"
             onClick={() => removeItem(index)}
           >
-            <CiCircleRemove />
+            <CiCircleRemove className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
-          <span className="text-4xl">{item.icon}</span>
-          <span className="mt-2 text-sm">{item.name}</span>
+          <span className="text-2xl sm:text-3xl lg:text-4xl mb-1">
+            {item.icon}
+          </span>
+          <span className="text-xs sm:text-sm text-center truncate w-full px-1">
+            {item.name}
+          </span>
+          <span className="text-xs text-gray-400">Qty: {item.quantity}</span>
+
+          {contextMenu && (
+            <ItemContextMenu
+              onUse={() => {
+                if (item.quantity > 1) {
+                  const updatedQuickItems = [...quickItems];
+                  updatedQuickItems[index] = {
+                    ...item,
+                    quantity: item.quantity - 1,
+                  };
+                  setQuickItems(updatedQuickItems);
+                } else {
+                  removeItem(index);
+                }
+                setContextMenu(false);
+              }}
+              onGive={(user) => {
+                setContextMenu(false);
+              }}
+              users={users}
+              onClose={() => setContextMenu(false)}
+            />
+          )}
         </>
       ) : (
-        <span className="text-gray-500">Empty Slot</span>
+        <span className="text-gray-500 text-sm">Empty</span>
       )}
     </div>
   );
 };
 
-// Clothing Slot Component
-const ClothingSlot = ({ name }) => (
-  <div className="flex flex-col items-center bg-gray-700 p-4 rounded-md">
-    <img src={name} alt="clothing" className="w-10 h-10" />
+const ClothingSlot = ({ name, label }) => (
+  <div
+    className="aspect-square flex flex-col items-center justify-center
+    bg-gray-700 p-2 sm:p-3 rounded-lg hover:bg-gray-600 transition-colors duration-200"
+  >
+    <img src={name} alt={label} className="w-6 h-6 sm:w-8 sm:h-8 mb-1" />
+    <span className="text-xs text-gray-400 truncate w-full text-center">
+      {label}
+    </span>
   </div>
 );
 
