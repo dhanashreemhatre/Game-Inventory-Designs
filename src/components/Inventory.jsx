@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import {hat,shirt, rifle, sport_shoe, trousers, watch} from "./images/images";
+import { hat, shirt, rifle, sport_shoe, trousers, watch } from "./images/images";
 import { CiCircleRemove } from "react-icons/ci";
 
 // Drag types
@@ -12,16 +12,16 @@ const ItemTypes = {
 
 const InventoryApp = () => {
   const initialInventoryItems = [
-    { name: "Money", icon: "💵" },
-    { name: "Badge LSPO", icon: "👮‍♂️" },
-    { name: "Driver's license", icon: "🪪" },
-    { name: "Boombox", icon: "📻" },
-    { name: "Water Bottle", icon: "🥤" },
-    { name: "Burger", icon: "🍔" },
-    { name: "Fry Box", icon: "🍟" },
-    { name: "Bat", icon: "🏏" },
-    { name: "Pistol", icon: "🔫" },
-    { name: "SMG", icon: "🔫" },
+    { name: "Money", icon: "💵", type: "currency", quantity: 10 },
+    { name: "Badge LSPO", icon: "👮‍♂️", type: "accessory", quantity: 1 },
+    { name: "Driver's license", icon: "🪪", type: "document", quantity: 1 },
+    { name: "Boombox", icon: "📻", type: "gadget", quantity: 10 },
+    { name: "Water Bottle", icon: "🥤", type: "consumable", quantity: 10 },
+    { name: "Burger", icon: "🍔", type: "food", quantity: 10 },
+    { name: "Fry Box", icon: "🍟", type: "food", quantity: 10 },
+    { name: "Bat", icon: "🏏", type: "weapon", quantity: 1 },
+    { name: "Pistol", icon: "🔫", type: "weapon", quantity: 1 },
+    { name: "SMG", icon: "🔫", type: "weapon", quantity: 1 },
   ];
 
   const [inventoryItems, setInventoryItems] = useState(initialInventoryItems);
@@ -44,9 +44,9 @@ const InventoryApp = () => {
   const removeItemFromQuickSlot = (index) => {
     const updatedQuickItems = [...quickItems];
     const itemToRemove = updatedQuickItems[index];
+    updatedQuickItems[index] = null;
     setQuickItems(updatedQuickItems);
     setInventoryItems([...inventoryItems, itemToRemove]); // Add back to inventory
-    updatedQuickItems[index] = null;
   };
 
   return (
@@ -74,7 +74,12 @@ const InventoryApp = () => {
             <h3 className="text-lg font-bold mb-4">Inventory</h3>
             <div className="grid grid-cols-4 gap-4">
               {inventoryItems.map((item, index) => (
-                <InventoryItem key={index} item={item} />
+                <InventoryItem
+                  key={index}
+                  item={item}
+                  setInventoryItems={setInventoryItems}
+                  inventoryItems={inventoryItems}
+                />
               ))}
             </div>
           </div>
@@ -83,18 +88,10 @@ const InventoryApp = () => {
           <div className="w-1/5">
             <h3 className="text-lg font-bold mb-4">Clothing</h3>
             <div className="grid grid-cols-1 gap-4">
-              <div className="flex items-center">
-                <ClothingSlot name={hat} />
-              </div>
-              <div className="flex items-center">
-                <ClothingSlot name={shirt} />
-              </div>
-              <div className="flex items-center">
-                <ClothingSlot name={trousers} />
-              </div>
-              <div className="flex items-center">
-                <ClothingSlot name={sport_shoe} />
-              </div>
+              <ClothingSlot name={hat} />
+              <ClothingSlot name={shirt} />
+              <ClothingSlot name={trousers} />
+              <ClothingSlot name={sport_shoe} />
             </div>
           </div>
         </div>
@@ -103,8 +100,12 @@ const InventoryApp = () => {
   );
 };
 
-// Inventory Item Component
-const InventoryItem = ({ item }) => {
+// Inventory Item Component with right-click options
+const InventoryItem = ({ item, setInventoryItems, inventoryItems }) => {
+  const [showContextMenu, setShowContextMenu] = useState(false);
+  const [showGiveOptions, setShowGiveOptions] = useState(false);
+  const contextMenuRef = useRef(null);
+
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.INVENTORY_ITEM,
     item,
@@ -113,15 +114,79 @@ const InventoryItem = ({ item }) => {
     }),
   }));
 
+  const users = ["John", "Doe", "Alice", "Bob"]; // Example users
+
+  const handleContextMenu = (e) => {
+    e.preventDefault();
+    setShowContextMenu(!showContextMenu);
+  };
+
+  const handleClickOutside = (e) => {
+    if (contextMenuRef.current && !contextMenuRef.current.contains(e.target)) {
+      setShowContextMenu(false);
+      setShowGiveOptions(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleUse = () => {
+    if (item.quantity > 1) {
+      setInventoryItems(
+        inventoryItems.map((invItem) =>
+          invItem.name === item.name
+            ? { ...invItem, quantity: invItem.quantity - 1 }
+            : invItem
+        )
+      );
+    } else {
+      setInventoryItems(inventoryItems.filter((invItem) => invItem.name !== item.name));
+    }
+    setShowContextMenu(false); // Close context menu
+  };
+
+  const handleGive = () => {
+    setShowGiveOptions(true);
+    setShowContextMenu(false);
+  };
+
   return (
     <div
       ref={drag}
-      className={`flex flex-col items-center bg-gray-700 p-4 rounded-md ${
+      className={`relative flex flex-col items-center bg-gray-700 p-4 rounded-md ${
         isDragging ? "opacity-50" : ""
       }`}
+      onContextMenu={handleContextMenu}
     >
       <span className="text-4xl">{item.icon}</span>
-      <span className="mt-2 text-sm">{item.name}</span>
+      <span className="mt-2 text-sm">
+        {item.name} ({item.quantity})
+      </span>
+
+      {showContextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="absolute top-10 left-0 bg-gray-800 text-white p-2 rounded shadow-md z-10"
+        >
+          <button onClick={handleUse} className="block w-full text-left">Use</button>
+          <button onClick={handleGive} className="block w-full text-left">Give</button>
+        </div>
+      )}
+
+      {showGiveOptions && (
+        <div className="absolute top-10 left-0 bg-gray-800 text-white p-2 rounded shadow-md z-10">
+          {users.map((user, index) => (
+            <button key={index} className="block w-full text-left">
+              Give to {user}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -140,15 +205,14 @@ const QuickSlot = ({ index, item, moveItemToQuickSlot, removeItem }) => {
     >
       {item ? (
         <>
-         <button
+          <button
             className="ml-auto mt-2 bg-red-500 text-sm px-2 py-1 rounded-md"
             onClick={() => removeItem(index)}
           >
-            <CiCircleRemove/>
+            <CiCircleRemove />
           </button>
           <span className="text-4xl">{item.icon}</span>
           <span className="mt-2 text-sm">{item.name}</span>
-         
         </>
       ) : (
         <span className="text-gray-500">Empty Slot</span>
@@ -158,12 +222,10 @@ const QuickSlot = ({ index, item, moveItemToQuickSlot, removeItem }) => {
 };
 
 // Clothing Slot Component
-const ClothingSlot = ({ name }) => {
-  return (
-    <div className="flex flex-col items-center bg-gray-700 p-4 rounded-md">
-      <img src={name} alt="shoes" className="ml-2 w-10 h-10" />
-    </div>
-  );
-};
+const ClothingSlot = ({ name }) => (
+  <div className="flex flex-col items-center bg-gray-700 p-4 rounded-md">
+    <img src={name} alt="clothing" className="w-10 h-10" />
+  </div>
+);
 
 export default InventoryApp;
