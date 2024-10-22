@@ -138,7 +138,7 @@ const InventoryApp = () => {
           {/* Inventory Section */}
           <div className="w-3/5 space-y-4">
             <h3 className="text-lg font-bold">Inventory</h3>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-6 gap-3">
               {inventoryItems.map((item, index) => (
                 <InventoryItem
                   key={index}
@@ -240,7 +240,7 @@ const ItemContextMenu = ({ onUse, onGive, users, onClose }) => {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div
         ref={menuRef}
         className="bg-gray-800 text-white rounded-lg shadow-lg w-full max-w-xs"
@@ -259,13 +259,13 @@ const ItemContextMenu = ({ onUse, onGive, users, onClose }) => {
           {!showUsers ? (
             <>
               <button
-                className="block w-full text-left px-4 py-3 hover:bg-gray-700 rounded-lg"
+                className="block w-full text-left px-2 py-2 hover:bg-gray-700 rounded-lg"
                 onClick={onUse}
               >
                 Use
               </button>
               <button
-                className="block w-full text-left px-4 py-3 hover:bg-gray-700 rounded-lg"
+                className="block w-full text-left px-2 py-2 hover:bg-gray-700 rounded-lg"
                 onClick={() => setShowUsers(true)}
               >
                 Give
