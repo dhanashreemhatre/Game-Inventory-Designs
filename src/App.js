@@ -1,11 +1,13 @@
 import InventoryApp from "./components/Inventory";
 import Inventory3 from "./components/Inventory3";
+import AestheticInventory from "./components/Inventory2";
 
 
 function App() {
   return (
     <div className="App">
-      <Inventory3/>
+
+      <AestheticInventory/>
     </div>
   );
 }
