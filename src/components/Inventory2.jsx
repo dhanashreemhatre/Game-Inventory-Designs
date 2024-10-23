@@ -2,6 +2,14 @@ import React, { useState } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Settings, X, User, Trash2, ArrowLeft } from 'lucide-react';
+import {
+  hat,
+  shirt,
+  rifle,
+  sport_shoe,
+  trousers,
+  watch,
+} from "./images/images";
 
 const ItemTypes = {
   INVENTORY_ITEM: 'inventoryItem',
@@ -10,27 +18,56 @@ const ItemTypes = {
 
 const defaultThemes = {
   red: {
-    primary: 'bg-red-900/40',
-    secondary: 'bg-red-800/30',
-    accent: 'border-red-500',
-    text: 'text-red-100',
-    hover: 'hover:bg-red-700/40'
+    primary: 'bg-black-900',            // Deep black background
+    secondary: 'bg-red-800/40',         // Dark red with transparency
+    accent: 'border-red-500',           // Red accent for borders
+    text: 'text-red-200',               // Lighter red text for contrast
+    hover: 'hover:bg-red-600/40'        // Red hover effect with transparency
   },
   blue: {
-    primary: 'bg-blue-900/40',
-    secondary: 'bg-blue-800/30',
-    accent: 'border-blue-500',
-    text: 'text-blue-100',
-    hover: 'hover:bg-blue-700/40'
+    primary: 'bg-black-900',            // Deep black background
+    secondary: 'bg-blue-800/40',        // Dark blue with transparency
+    accent: 'border-blue-500',          // Blue accent for borders
+    text: 'text-blue-200',              // Light blue text for contrast
+    hover: 'hover:bg-blue-600/40'       // Blue hover effect with transparency
   },
   green: {
-    primary: 'bg-emerald-900/40',
-    secondary: 'bg-emerald-800/30',
-    accent: 'border-emerald-500',
-    text: 'text-emerald-100',
-    hover: 'hover:bg-emerald-700/40'
+    primary: 'bg-black-900',            // Deep black background
+    secondary: 'bg-emerald-800/40',     // Dark green with transparency
+    accent: 'border-emerald-500',       // Emerald accent for borders
+    text: 'text-emerald-200',           // Light green text for contrast
+    hover: 'hover:bg-emerald-600/40'    // Emerald hover effect with transparency
+  },
+  pink: {
+    primary: 'bg-black-900',            // Deep black background
+    secondary: 'bg-pink-800/40',        // Dark pink with transparency
+    accent: 'border-pink-500',          // Pink accent for borders
+    text: 'text-pink-200',              // Light pink text for contrast
+    hover: 'hover:bg-pink-600/40'       // Pink hover effect with transparency
+  },
+  purple: {
+    primary: 'bg-black-900',            // Deep black background
+    secondary: 'bg-purple-800/40',      // Dark purple with transparency
+    accent: 'border-purple-500',        // Purple accent for borders
+    text: 'text-purple-200',            // Light purple text for contrast
+    hover: 'hover:bg-purple-600/40'     // Purple hover effect with transparency
+  },
+  blackGold: {
+    primary: 'bg-black-900',            // Deep black background
+    secondary: 'bg-gray-800/50',        // Dark gray with transparency
+    accent: 'border-yellow-400',        // Gold accent for borders
+    text: 'text-yellow-200',            // Light gold text for contrast
+    hover: 'hover:bg-yellow-600/40'     // Gold hover effect with transparency
+  },
+  whiteBlue: { // New white and blue theme
+    primary: 'bg-white/80',
+    secondary: 'bg-blue-400/60',
+    accent: 'border-blue-300',
+    text: 'text-blue-800',
+    hover: 'hover:bg-blue-500/60'
   }
 };
+
 
 const initialInventory = [
   { id: 1, name: "Health Pack", icon: "🧰", quantity: 5 },
@@ -44,7 +81,7 @@ const initialInventory = [
 ];
 
 export default function AestheticInventory() {
-  const [activeTheme, setActiveTheme] = useState('red');
+  const [activeTheme, setActiveTheme] = useState('blackGold');
   const [showSettings, setShowSettings] = useState(false);
   const [inventory, setInventory] = useState(initialInventory);
   const [quickSlots, setQuickSlots] = useState(Array(4).fill(null));
@@ -131,29 +168,38 @@ export default function AestheticInventory() {
     setPlayerId('');
   };
 
-  const moveToQuickSlot = (item, slotIndex) => {
-    // Remove item from inventory
-    setInventory(inventory.filter(inv => inv.id !== item.id));
-    
-    // If there's an item in the quickslot, move it back to inventory
-    const currentItem = quickSlots[slotIndex];
-    if (currentItem) {
-      const existingItem = inventory.find(inv => inv.id === currentItem.id);
-      if (existingItem) {
-        setInventory(inventory.map(inv =>
-          inv.id === currentItem.id 
-            ? { ...inv, quantity: inv.quantity + currentItem.quantity }
-            : inv
-        ));
-      } else {
-        setInventory(prev => [...prev, currentItem]);
-      }
-    }
-    
-    // Update quickslot
-    const updatedQuickSlots = [...quickSlots];
-    updatedQuickSlots[slotIndex] = item;
-    setQuickSlots(updatedQuickSlots);
+  const moveToQuickSlot = (draggedItem, targetSlotIndex) => {
+    setInventory(prevInventory => {
+      setQuickSlots(prevQuickSlots => {
+        const newQuickSlots = [...prevQuickSlots];
+        const currentSlotItem = newQuickSlots[targetSlotIndex];
+        
+        // Handle the item currently in the quickslot (if any)
+        if (currentSlotItem) {
+          const existingItemIndex = prevInventory.findIndex(item => item.id === currentSlotItem.id);
+          if (existingItemIndex !== -1) {
+            // Update existing item quantity
+            const updatedInventory = [...prevInventory];
+            updatedInventory[existingItemIndex] = {
+              ...updatedInventory[existingItemIndex],
+              quantity: updatedInventory[existingItemIndex].quantity + currentSlotItem.quantity
+            };
+            prevInventory = updatedInventory;
+          } else {
+            // Add item back to inventory
+            prevInventory = [...prevInventory, { ...currentSlotItem }];
+          }
+        }
+        
+        // Place dragged item in quickslot
+        newQuickSlots[targetSlotIndex] = { ...draggedItem };
+        
+        return newQuickSlots;
+      });
+      
+      // Remove dragged item from inventory
+      return prevInventory.filter(item => item.id !== draggedItem.id);
+    });
   };
 
   const handleItemClick = (e, item, slotIndex = null) => {
@@ -181,13 +227,13 @@ export default function AestheticInventory() {
               </div>
               
               <div className="absolute inset-0 grid grid-cols-3 gap-4 p-4">
-                <EquipmentSlot position="top-0 left-1/2 -translate-x-1/2" theme={theme} label="Hat" />
-                <EquipmentSlot position="top-1/4 left-0" theme={theme} label="Watch" />
-                <EquipmentSlot position="top-1/4 right-0" theme={theme} label="Armor" />
-                <EquipmentSlot position="top-1/2 left-0" theme={theme} label="Shirt" />
-                <EquipmentSlot position="top-1/2 right-0" theme={theme} label="Weapon" />
-                <EquipmentSlot position="bottom-1/4 left-1/2 -translate-x-1/2" theme={theme} label="Pants" />
-                <EquipmentSlot position="bottom-0 left-1/2 -translate-x-1/2" theme={theme} label="Shoes" />
+                <EquipmentSlot position="top-0 left-1/2 -translate-x-1/2" theme={theme} image={hat} label="Hat" />
+                <EquipmentSlot position="top-1/4 left-0" theme={theme} image={watch} label="Watch" />
+                <EquipmentSlot position="top-1/4 right-0" theme={theme} image={rifle} label="Armor" />
+                <EquipmentSlot position="top-1/2 left-0" theme={theme} image={shirt} label="Shirt" />
+                <EquipmentSlot position="top-1/2 right-0" theme={theme} image={rifle} label="Weapon" />
+                <EquipmentSlot position="bottom-1/4 left-1/2 -translate-x-1/2" theme={theme} image={trousers} label="Pants" />
+                <EquipmentSlot position="bottom-0 left-1/2 -translate-x-1/2" theme={theme} image={sport_shoe} label="Shoes" />
               </div>
             </div>
           </div>
@@ -332,11 +378,11 @@ export default function AestheticInventory() {
 const InventoryItem = ({ item, theme, onDoubleClick, onClick }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.INVENTORY_ITEM,
-    item: { ...item },
+    item: () => ({ ...item }), // Create a fresh copy for each drag operation
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
     })
-  }));
+  }), [item]); // Add dependency array to recreate drag source when item changes
 
   return (
     <div
@@ -358,11 +404,14 @@ const InventoryItem = ({ item, theme, onDoubleClick, onClick }) => {
 const QuickSlot = ({ item, theme, index, onClick, onAction, onDrop }) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: ItemTypes.INVENTORY_ITEM,
-    drop: (droppedItem) => onDrop(droppedItem),
+    drop: (droppedItem) => {
+      onDrop(droppedItem);
+      return { dropped: true };
+    },
     collect: (monitor) => ({
       isOver: !!monitor.isOver()
     })
-  }));
+  }), [onDrop]); // Add dependency array to recreate drop target when onDrop changes
 
   return (
     <div
@@ -388,11 +437,13 @@ const QuickSlot = ({ item, theme, index, onClick, onAction, onDrop }) => {
   );
 };
 
-const EquipmentSlot = ({ position, theme, label }) => (
+// Updated moveToQuickSlot function with improved state management
+
+const EquipmentSlot = ({ position, theme, image, label }) => (
   <div className={`absolute ${position}`}>
     <div className={`${theme.secondary} ${theme.hover} w-12 h-12 rounded-lg border ${theme.accent}
       flex items-center justify-center transition-colors duration-200`}>
-      <span className="text-xs text-center">{label}</span>
+      <img src={image} alt={label} className="w-10 h-10 object-contain" /> {/* Image display */}
     </div>
   </div>
 );
