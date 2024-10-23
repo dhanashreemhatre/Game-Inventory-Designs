@@ -1,10 +1,11 @@
 import InventoryApp from "./components/Inventory";
+import Inventory3 from "./components/Inventory3";
 
 
 function App() {
   return (
     <div className="App">
-      <InventoryApp/>
+      <Inventory3/>
     </div>
   );
 }

@@ -17,6 +17,7 @@ const ItemTypes = {
   QUICK_ITEM: "quick_item",
 };
 
+
 const InventoryApp = () => {
   const initialInventoryItems = [
     { id: 1, name: "Money", icon: "💵", type: "currency", quantity: 10 },
@@ -33,12 +34,51 @@ const InventoryApp = () => {
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("inventory");
-  const [quickItems, setQuickItems] = useState(Array(4).fill(null));
+  const [quickItems, setQuickItems] = useState(Array(5).fill(null));
   const [inventoryItems, setInventoryItems] = useState(initialInventoryItems);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [showTooltip, setShowTooltip] = useState({ show: false, message: "" });
+  const [dragQuantity, setDragQuantity] = useState(1);
+
+  const renderInventoryItems = () => (
+    <div className="grid grid-cols-6 gap-3">
+      {inventoryItems.map((item, index) => (
+        <InventoryItem
+          key={index}
+          item={item}
+          setInventoryItems={setInventoryItems}
+          inventoryItems={inventoryItems}
+          dragQuantity={dragQuantity}
+        />
+      ))}
+    </div>
+  );
+  
+  const renderMobileInventoryItems = () => (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {inventoryItems.map((item, index) => (
+        <InventoryItem
+          key={index}
+          item={item}
+          setInventoryItems={setInventoryItems}
+          inventoryItems={inventoryItems}
+          dragQuantity={dragQuantity}
+        />
+      ))}
+    </div>
+  );
 
   const moveItemToQuickSlot = (draggedItem, targetIndex) => {
+    // Check if the item already exists in any quick slot
+    const existingSlotIndex = quickItems.findIndex(
+      item => item && item.id === draggedItem.id
+    );
+
+    if (existingSlotIndex !== -1) {
+      showGameNotification(`${draggedItem.name} is already in quick slot ${existingSlotIndex + 1}`);
+      return;
+    }
+
     // Check if the slot is already occupied
     if (quickItems[targetIndex]) {
       showGameNotification("This slot is already occupied!");
@@ -54,22 +94,32 @@ const InventoryApp = () => {
     );
 
     if (inventoryIndex !== -1) {
+      const availableQuantity = updatedInventory[inventoryIndex].quantity;
+      const quantityToMove = Math.min(draggedItem.dragQuantity || 1, availableQuantity);
+
+      if (quantityToMove <= 0) {
+        showGameNotification("Not enough items available!");
+        return;
+      }
+
       // Create a new reference for the quick slot item
       updatedQuickItems[targetIndex] = {
         ...draggedItem,
-        quantity: 1,
+        quantity: quantityToMove,
       };
 
       // Update inventory quantity
-      if (updatedInventory[inventoryIndex].quantity > 1) {
-        updatedInventory[inventoryIndex].quantity -= 1;
+      if (updatedInventory[inventoryIndex].quantity > quantityToMove) {
+        updatedInventory[inventoryIndex].quantity -= quantityToMove;
       } else {
         updatedInventory.splice(inventoryIndex, 1);
       }
 
       setQuickItems(updatedQuickItems);
       setInventoryItems(updatedInventory);
-      showGameNotification(`${draggedItem.name} added to quick slot ${targetIndex + 1}`);
+      showGameNotification(
+        `${quantityToMove}x ${draggedItem.name} added to quick slot ${targetIndex + 1}`
+      );
     }
   };
 
@@ -134,6 +184,27 @@ const InventoryApp = () => {
           </div>
         )}
 
+        
+        {/* Quantity Selector */}
+        <div className="fixed bottom-4 left-4 bg-gray-900 p-2 rounded-lg z-50">
+          <div className="text-sm mb-1">Drag Quantity:</div>
+          <div className="flex items-center space-x-2">
+            <button
+              className="px-2 py-1 bg-gray-700 rounded hover:bg-gray-600"
+              onClick={() => setDragQuantity(Math.max(1, dragQuantity - 1))}
+            >
+              -
+            </button>
+            <span>{dragQuantity}</span>
+            <button
+              className="px-2 py-1 bg-gray-700 rounded hover:bg-gray-600"
+              onClick={() => setDragQuantity(dragQuantity + 1)}
+            >
+              +
+            </button>
+          </div>
+        </div>
+
         {/* Rest of your UI components... */}
          {/* Mobile Header with Navigation */}
          <div className="lg:hidden">
@@ -167,6 +238,20 @@ const InventoryApp = () => {
           </div>
         </div>
 
+        {/* ... Rest of your existing JSX ... */}
+        <div className="hidden lg:flex p-4 space-x-4">
+            {/* Inventory Section */}
+            <div className="w-3/5 space-y-4">
+              <h3 className="text-lg font-bold">Inventory</h3>
+              {renderInventoryItems()}
+            </div>
+
+          {/* Clothing Section */}
+          <div className="w-1/5 space-y-4">
+            <h3 className="text-lg font-bold">Clothing</h3>
+            <ClothingSection />
+          </div>
+          
         {/* Quick Items Section */}
         <div className="w-1/5 space-y-4">
           <h3 className="text-lg font-bold">Quick Items (1-4)</h3>
@@ -187,44 +272,12 @@ const InventoryApp = () => {
             ))}
           </div>
         </div>
-
-        {/* ... Rest of your existing JSX ... */}
-             {/* Inventory Section */}
-          <div className="w-3/5 space-y-4">
-            <h3 className="text-lg font-bold">Inventory</h3>
-            <div className="grid grid-cols-6 gap-3">
-              {inventoryItems.map((item, index) => (
-                <InventoryItem
-                  key={index}
-                  item={item}
-                  setInventoryItems={setInventoryItems}
-                  inventoryItems={inventoryItems}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Clothing Section */}
-          <div className="w-1/5 space-y-4">
-            <h3 className="text-lg font-bold">Clothing</h3>
-            <ClothingSection />
-          </div>
+        </div>
 
           {/* Mobile Content */}
         <div className="lg:hidden p-4">
           <div className="space-y-4">
-            {activeTab === "inventory" && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {inventoryItems.map((item, index) => (
-                  <InventoryItem
-                    key={index}
-                    item={item}
-                    setInventoryItems={setInventoryItems}
-                    inventoryItems={inventoryItems}
-                  />
-                ))}
-              </div>
-            )}
+          {activeTab === "inventory" && renderMobileInventoryItems()}
 
             {activeTab === "quickItems" && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -343,18 +396,21 @@ const ItemContextMenu = ({ onUse, onGive, users, onClose }) => {
   );
 };
 
-const InventoryItem = ({ item, setInventoryItems, inventoryItems }) => {
+const InventoryItem = ({ item, setInventoryItems, inventoryItems, dragQuantity }) => {  // Added dragQuantity to props
   const [contextMenu, setContextMenu] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState(null);
   const users = ["John", "Doe", "Alice", "Bob"];
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.INVENTORY_ITEM,
-    item,
+    item: () => ({
+      ...item,
+      dragQuantity: dragQuantity  // Use the dragQuantity from props
+    }),
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
-  }));
+  }), [item, dragQuantity]);  // Add dragQuantity to dependencies array
 
   const handleTouchStart = () => {
     const timer = setTimeout(() => setContextMenu(true), 500);
@@ -512,10 +568,9 @@ const ClothingSlot = ({ name, label }) => (
     bg-gray-700 p-2 sm:p-3 rounded-lg hover:bg-gray-600 transition-colors duration-200"
   >
     <img src={name} alt={label} className="w-6 h-6 sm:w-8 sm:h-8 mb-1" />
-    <span className="text-xs text-gray-400 truncate w-full text-center">
-      {label}
-    </span>
+    <span className="text-xs sm:text-sm text-center">{label}</span>
   </div>
 );
+
 
 export default InventoryApp;
