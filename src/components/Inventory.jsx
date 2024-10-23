@@ -18,73 +18,125 @@ const ItemTypes = {
 };
 
 const InventoryApp = () => {
-  // ... (previous state declarations remain the same)
   const initialInventoryItems = [
-    { name: "Money", icon: "💵", type: "currency", quantity: 10 },
-    { name: "Badge LSPO", icon: "👮‍♂", type: "accessory", quantity: 1 },
-    { name: "Driver's license", icon: "🪪", type: "document", quantity: 1 },
-    { name: "Boombox", icon: "📻", type: "gadget", quantity: 10 },
-    { name: "Water Bottle", icon: "🥤", type: "consumable", quantity: 10 },
-    { name: "Burger", icon: "🍔", type: "food", quantity: 10 },
-    { name: "Fry Box", icon: "🍟", type: "food", quantity: 10 },
-    { name: "Bat", icon: "🏏", type: "weapon", quantity: 1 },
-    { name: "Pistol", icon: "🔫", type: "weapon", quantity: 1 },
-    { name: "SMG", icon: "🔫", type: "weapon", quantity: 1 },
+    { id: 1, name: "Money", icon: "💵", type: "currency", quantity: 10 },
+    { id: 2, name: "Badge LSPO", icon: "👮‍♂", type: "accessory", quantity: 1 },
+    { id: 3, name: "Driver's license", icon: "🪪", type: "document", quantity: 1 },
+    { id: 4, name: "Boombox", icon: "📻", type: "gadget", quantity: 10 },
+    { id: 5, name: "Water Bottle", icon: "🥤", type: "consumable", quantity: 10 },
+    { id: 6, name: "Burger", icon: "🍔", type: "food", quantity: 10 },
+    { id: 7, name: "Fry Box", icon: "🍟", type: "food", quantity: 10 },
+    { id: 8, name: "Bat", icon: "🏏", type: "weapon", quantity: 1 },
+    { id: 9, name: "Pistol", icon: "🔫", type: "weapon", quantity: 1 },
+    { id: 10, name: "SMG", icon: "🔫", type: "weapon", quantity: 1 },
   ];
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("inventory");
-  const [quickItems, setQuickItems] = useState(Array(6).fill(null));
+  const [quickItems, setQuickItems] = useState(Array(4).fill(null));
   const [inventoryItems, setInventoryItems] = useState(initialInventoryItems);
-  const moveItemToQuickSlot = (item, index) => {
-    const updatedQuickItems = [...quickItems];
-    updatedQuickItems[index] = { ...item }; // Create a copy of the item
-    setQuickItems(updatedQuickItems);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [showTooltip, setShowTooltip] = useState({ show: false, message: "" });
 
-    // Remove or decrease quantity from inventory
+  const moveItemToQuickSlot = (draggedItem, targetIndex) => {
+    // Check if the slot is already occupied
+    if (quickItems[targetIndex]) {
+      showGameNotification("This slot is already occupied!");
+      return;
+    }
+
+    const updatedQuickItems = [...quickItems];
     const updatedInventory = [...inventoryItems];
+
+    // Find the item in inventory
     const inventoryIndex = updatedInventory.findIndex(
-      (i) => i.name === item.name,
+      (item) => item.id === draggedItem.id
     );
 
     if (inventoryIndex !== -1) {
+      // Create a new reference for the quick slot item
+      updatedQuickItems[targetIndex] = {
+        ...draggedItem,
+        quantity: 1,
+      };
+
+      // Update inventory quantity
       if (updatedInventory[inventoryIndex].quantity > 1) {
         updatedInventory[inventoryIndex].quantity -= 1;
       } else {
         updatedInventory.splice(inventoryIndex, 1);
       }
+
+      setQuickItems(updatedQuickItems);
       setInventoryItems(updatedInventory);
+      showGameNotification(`${draggedItem.name} added to quick slot ${targetIndex + 1}`);
     }
   };
 
   const removeItemFromQuickSlot = (index) => {
     const updatedQuickItems = [...quickItems];
     const itemToRemove = updatedQuickItems[index];
+    
+    if (!itemToRemove) return;
+
     updatedQuickItems[index] = null;
     setQuickItems(updatedQuickItems);
 
-    // Add back to inventory with proper quantity handling
+    // Return item to inventory
     const existingItem = inventoryItems.find(
-      (item) => item.name === itemToRemove.name,
+      (item) => item.id === itemToRemove.id
     );
+
     if (existingItem) {
       setInventoryItems(
         inventoryItems.map((item) =>
-          item.name === itemToRemove.name
+          item.id === itemToRemove.id
             ? { ...item, quantity: item.quantity + 1 }
-            : item,
-        ),
+            : item
+        )
       );
     } else {
       setInventoryItems([...inventoryItems, { ...itemToRemove, quantity: 1 }]);
     }
+    
+    showGameNotification(`${itemToRemove.name} removed from quick slot`);
   };
+
+  const showGameNotification = (message) => {
+    setShowTooltip({ show: true, message });
+    setTimeout(() => setShowTooltip({ show: false, message: "" }), 2000);
+  };
+
+  // Keyboard shortcuts for quick slots
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= 4) {
+        const quickItem = quickItems[num - 1];
+        if (quickItem) {
+          showGameNotification(`Using ${quickItem.name}`);
+          // Add your use item logic here
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [quickItems]);
 
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="min-h-screen bg-gray-800 text-white">
-        {/* Mobile Header with Navigation */}
-        <div className="lg:hidden">
+        {/* Game Notification */}
+        {showTooltip.show && (
+          <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in">
+            {showTooltip.message}
+          </div>
+        )}
+
+        {/* Rest of your UI components... */}
+         {/* Mobile Header with Navigation */}
+         <div className="lg:hidden">
           <div className="flex items-center justify-between p-4 bg-gray-900 sticky top-0 z-10">
             <h1 className="text-xl font-bold">Inventory</h1>
             <button
@@ -115,27 +167,29 @@ const InventoryApp = () => {
           </div>
         </div>
 
-        {/* Desktop Layout */}
-        <div className="hidden lg:flex p-4 space-x-4">
-          {/* Quick Items Section */}
-          <div className="w-1/5 space-y-4">
-            <h3 className="text-lg font-bold">Quick Items</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {quickItems.map((item, index) => (
-                <QuickSlot
-                  key={index}
-                  index={index}
-                  item={item}
-                  moveItemToQuickSlot={moveItemToQuickSlot}
-                  removeItem={removeItemFromQuickSlot}
-                  setQuickItems={setQuickItems}
-                  quickItems={quickItems}
-                />
-              ))}
-            </div>
+        {/* Quick Items Section */}
+        <div className="w-1/5 space-y-4">
+          <h3 className="text-lg font-bold">Quick Items (1-4)</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {quickItems.map((item, index) => (
+              <QuickSlot
+                key={index}
+                index={index}
+                item={item}
+                moveItemToQuickSlot={moveItemToQuickSlot}
+                removeItem={removeItemFromQuickSlot}
+                setQuickItems={setQuickItems}
+                quickItems={quickItems}
+                selected={selectedSlot === index}
+                setSelected={setSelectedSlot}
+                keyBinding={index + 1}
+              />
+            ))}
           </div>
+        </div>
 
-          {/* Inventory Section */}
+        {/* ... Rest of your existing JSX ... */}
+             {/* Inventory Section */}
           <div className="w-3/5 space-y-4">
             <h3 className="text-lg font-bold">Inventory</h3>
             <div className="grid grid-cols-6 gap-3">
@@ -155,9 +209,8 @@ const InventoryApp = () => {
             <h3 className="text-lg font-bold">Clothing</h3>
             <ClothingSection />
           </div>
-        </div>
 
-        {/* Mobile Content */}
+          {/* Mobile Content */}
         <div className="lg:hidden p-4">
           <div className="space-y-4">
             {activeTab === "inventory" && (
@@ -192,11 +245,11 @@ const InventoryApp = () => {
             {activeTab === "clothing" && <ClothingSection />}
           </div>
         </div>
+
       </div>
     </DndProvider>
   );
 };
-
 // Separate Clothing Section Component for reusability
 const ClothingSection = () => (
   <div className="bg-gray-700 p-4 rounded-lg">
@@ -363,6 +416,7 @@ const InventoryItem = ({ item, setInventoryItems, inventoryItems }) => {
   );
 };
 
+// Enhanced QuickSlot component with keyboard binding display and selection indicator
 const QuickSlot = ({
   index,
   item,
@@ -370,48 +424,45 @@ const QuickSlot = ({
   removeItem,
   setQuickItems,
   quickItems,
+  selected,
+  setSelected,
+  keyBinding
 }) => {
   const [contextMenu, setContextMenu] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState(null);
   const users = ["John", "Doe", "Alice", "Bob"];
 
-  const [, drop] = useDrop({
+  const [{ isOver }, drop] = useDrop({
     accept: ItemTypes.INVENTORY_ITEM,
     drop: (draggedItem) => moveItemToQuickSlot(draggedItem, index),
+    collect: (monitor) => ({
+      isOver: !!monitor.isOver(),
+    }),
   });
-
-  const handleTouchStart = () => {
-    if (!item) return;
-    const timer = setTimeout(() => setContextMenu(true), 500);
-    setLongPressTimer(timer);
-  };
-
-  const handleTouchEnd = () => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
-    }
-  };
 
   return (
     <div
       ref={drop}
-      className="relative aspect-square flex flex-col items-center justify-center
-        bg-gray-700 p-3 rounded-lg hover:bg-gray-600 transition-colors duration-200
-        touch-manipulation"
-      onContextMenu={(e) => {
-        if (!item) return;
-        e.preventDefault();
-        setContextMenu(true);
-      }}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
+      className={`relative aspect-square flex flex-col items-center justify-center
+        bg-gray-700 p-3 rounded-lg transition-colors duration-200
+        ${isOver ? "bg-gray-600 border-2 border-blue-500" : "hover:bg-gray-600"}
+        ${selected ? "ring-2 ring-yellow-500" : ""}
+        touch-manipulation`}
+      onClick={() => setSelected(index)}
     >
+      {/* Key Binding Indicator */}
+      <div className="absolute top-1 left-1 bg-gray-800 px-2 py-0.5 rounded text-xs">
+        {keyBinding}
+      </div>
+
       {item ? (
         <>
           <button
             className="absolute top-1 right-1 text-red-500 hover:text-red-400 p-1"
-            onClick={() => removeItem(index)}
+            onClick={(e) => {
+              e.stopPropagation();
+              removeItem(index);
+            }}
           >
             <CiCircleRemove className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
@@ -423,6 +474,7 @@ const QuickSlot = ({
           </span>
           <span className="text-xs text-gray-400">Qty: {item.quantity}</span>
 
+          {/* Context menu implementation remains the same */}
           {contextMenu && (
             <ItemContextMenu
               onUse={() => {
@@ -453,6 +505,7 @@ const QuickSlot = ({
   );
 };
 
+// ... Rest of your components remain the same ...
 const ClothingSlot = ({ name, label }) => (
   <div
     className="aspect-square flex flex-col items-center justify-center
