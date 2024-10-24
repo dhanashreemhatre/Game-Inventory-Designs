@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Settings, X, User, Trash2, ArrowLeft } from 'lucide-react';
+import { Settings, X, User, Trash2, ArrowLeft, Layout, Palette } from 'lucide-react';
+import EnhancedSettingsModal from './Setting'
 import {
   hat,
   shirt,
@@ -80,8 +81,14 @@ const initialInventory = [
   { id: 8, name: "Key", icon: "🔑", quantity: 1 }
 ];
 
+const defaultLayout = {
+  character: { gridColumn: '1', gridRow: '1' },
+  quickSlots: { gridColumn: '2', gridRow: '1' },
+  inventory: { gridColumn: '3', gridRow: '1' }
+};
+
+
 export default function AestheticInventory() {
-  const [activeTheme, setActiveTheme] = useState('blackGold');
   const [showSettings, setShowSettings] = useState(false);
   const [inventory, setInventory] = useState(initialInventory);
   const [quickSlots, setQuickSlots] = useState(Array(4).fill(null));
@@ -89,8 +96,18 @@ export default function AestheticInventory() {
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [giveAmount, setGiveAmount] = useState(1);
   const [playerId, setPlayerId] = useState('');
+
+  const [activeTheme, setActiveTheme] = useState(() => {
+    const savedTheme = localStorage.getItem('customTheme');
+    return savedTheme ? JSON.parse(savedTheme) : defaultThemes.blackGold;
+  });
   
-  const theme = defaultThemes[activeTheme];
+  const [layout, setLayout] = useState(() => {
+    const savedLayout = localStorage.getItem('customLayout');
+    return savedLayout ? JSON.parse(savedLayout) : defaultLayout;
+  });
+  
+  const [settingsTab, setSettingsTab] = useState('theme');
 
   const handleItemAction = (action, item, slotIndex = null) => {
     switch (action) {
@@ -218,7 +235,7 @@ export default function AestheticInventory() {
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Character Equipment Section */}
-          <div className={`${theme.primary} rounded-lg p-6 border border-gray-800`}>
+          <div style={layout.character} className={`${activeTheme.primary} rounded-lg p-6 border border-gray-800`}>
             <div className="relative aspect-[3/4] flex items-center justify-center">
               <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20">
                 <div className="h-full w-full flex items-center justify-center">
@@ -227,26 +244,26 @@ export default function AestheticInventory() {
               </div>
               
               <div className="absolute inset-0 grid grid-cols-3 gap-4 p-4">
-                <EquipmentSlot position="top-0 left-1/2 -translate-x-1/2" theme={theme} image={hat} label="Hat" />
-                <EquipmentSlot position="top-1/4 left-0" theme={theme} image={watch} label="Watch" />
-                <EquipmentSlot position="top-1/4 right-0" theme={theme} image={rifle} label="Armor" />
-                <EquipmentSlot position="top-1/2 left-0" theme={theme} image={shirt} label="Shirt" />
-                <EquipmentSlot position="top-1/2 right-0" theme={theme} image={rifle} label="Weapon" />
-                <EquipmentSlot position="bottom-1/4 left-1/2 -translate-x-1/2" theme={theme} image={trousers} label="Pants" />
-                <EquipmentSlot position="bottom-0 left-1/2 -translate-x-1/2" theme={theme} image={sport_shoe} label="Shoes" />
+                <EquipmentSlot position="top-0 left-1/2 -translate-x-1/2" theme={activeTheme} image={hat} label="Hat" />
+                <EquipmentSlot position="top-1/4 left-0" theme={activeTheme} image={watch} label="Watch" />
+                <EquipmentSlot position="top-1/4 right-0" theme={activeTheme} image={rifle} label="Armor" />
+                <EquipmentSlot position="top-1/2 left-0" theme={activeTheme} image={shirt} label="Shirt" />
+                <EquipmentSlot position="top-1/2 right-0" theme={activeTheme} image={rifle} label="Weapon" />
+                <EquipmentSlot position="bottom-1/4 left-1/2 -translate-x-1/2" theme={activeTheme} image={trousers} label="Pants" />
+                <EquipmentSlot position="bottom-0 left-1/2 -translate-x-1/2" theme={activeTheme} image={sport_shoe} label="Shoes" />
               </div>
             </div>
           </div>
 
           {/* Quick Slots Section */}
-          <div className={`${theme.primary} rounded-lg p-6 border border-gray-800`}>
-            <h2 className={`${theme.text} text-xl font-bold mb-4`}>Quick Access</h2>
+          <div style={layout.quickSlots} className={`${activeTheme.primary} rounded-lg p-6 border border-gray-800`}>
+            <h2 className={`${activeTheme.text} text-xl font-bold mb-4`}>Quick Access</h2>
             <div className="grid grid-cols-2 gap-4">
               {quickSlots.map((item, index) => (
                 <QuickSlot 
                   key={index} 
                   item={item} 
-                  theme={theme} 
+                  theme={activeTheme} 
                   index={index}
                   onClick={(e) => item && handleItemClick(e, item, index)}
                   onAction={handleItemAction}
@@ -257,14 +274,14 @@ export default function AestheticInventory() {
           </div>
 
           {/* Inventory Grid Section */}
-          <div className={`${theme.primary} rounded-lg p-6 border border-gray-800`}>
-            <h2 className={`${theme.text} text-xl font-bold mb-4`}>Inventory</h2>
+          <div style={layout.inventory} className={`${activeTheme.primary} rounded-lg p-6 border border-gray-800`}>
+            <h2 className={`${activeTheme.text} text-xl font-bold mb-4`}>Inventory</h2>
             <div className="grid grid-cols-4 gap-3">
               {inventory.map((item, index) => (
                 <InventoryItem 
                   key={index} 
                   item={item} 
-                  theme={theme}
+                  theme={activeTheme}
                   onClick={(e) => handleItemClick(e, item)}
                   onDoubleClick={() => {
                     const emptySlot = quickSlots.findIndex(slot => !slot);
@@ -275,13 +292,13 @@ export default function AestheticInventory() {
                 />
               ))}
               {Array.from({ length: Math.max(0, 16 - inventory.length) }).map((_, index) => (
-                <EmptySlot key={`empty-${index}`} theme={theme} />
+                <EmptySlot key={`empty-${index}`} theme={activeTheme} />
               ))}
             </div>
           </div>
         </div>
 
-        {/* Settings Button */}
+      {/* Settings Button */}
         <button 
           onClick={() => setShowSettings(true)}
           className="fixed bottom-4 right-4 p-3 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors"
@@ -289,32 +306,17 @@ export default function AestheticInventory() {
           <Settings className="w-6 h-6" />
         </button>
 
-        {/* Settings Modal */}
+        {/* Enhanced Settings Modal */}
         {showSettings && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-            <div className={`${theme.primary} rounded-lg p-6 max-w-md w-full`}>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold">Theme Settings</h2>
-                <button onClick={() => setShowSettings(false)}>
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                {Object.keys(defaultThemes).map((themeName) => (
-                  <button
-                    key={themeName}
-                    onClick={() => setActiveTheme(themeName)}
-                    className={`w-full p-3 rounded-lg ${defaultThemes[themeName].primary} 
-                      ${activeTheme === themeName ? 'ring-2 ring-white' : ''}`}
-                  >
-                    {themeName.charAt(0).toUpperCase() + themeName.slice(1)} Theme
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+          <EnhancedSettingsModal 
+            show={showSettings} 
+            onClose={() => setShowSettings(false)} // Pass the function to close the modal
+            theme={activeTheme}
+            onThemeChange={setActiveTheme} // Pass the state setter function
+            layout={layout}
+            onLayoutChange={setLayout} // Pass the layout setter function
+          />
         )}
-
         {/* Item Action Menu */}
         {showItemMenu && (
   <div 
@@ -322,7 +324,7 @@ export default function AestheticInventory() {
     onClick={() => setShowItemMenu(null)}
   >
     <div 
-      className={`${theme.primary} rounded-lg p-4 w-64 absolute`}
+      className={`${activeTheme.primary} rounded-lg p-4 w-64 absolute`}
       onClick={e => e.stopPropagation()}
       style={{
         left: `${Math.min(menuPosition.x, window.innerWidth - 280)}px`,
@@ -331,7 +333,7 @@ export default function AestheticInventory() {
     >
       <button
         onClick={() => handleItemAction('use', showItemMenu.item, showItemMenu.slotIndex)}
-        className={`w-full p-2 mb-2 ${theme.secondary} rounded flex items-center gap-2 hover:bg-gray-700/40`}
+        className={`w-full p-2 mb-2 ${activeTheme.secondary} rounded flex items-center gap-2 hover:bg-gray-700/40`}
       >
         <Trash2 className="w-4 h-4" /> Use Item
       </button>
@@ -354,7 +356,7 @@ export default function AestheticInventory() {
         />
         <button
           onClick={() => handleItemAction('give', showItemMenu.item, showItemMenu.slotIndex)}
-          className={`w-full p-2 ${theme.secondary} rounded flex items-center justify-center gap-2 hover:bg-gray-700/40`}
+          className={`w-full p-2 ${activeTheme.secondary} rounded flex items-center justify-center gap-2 hover:bg-gray-700/40`}
         >
           <User className="w-4 h-4" /> Give Item
         </button>
@@ -363,7 +365,7 @@ export default function AestheticInventory() {
       {showItemMenu.slotIndex !== null && (
         <button
           onClick={() => handleItemAction('returnToInventory', showItemMenu.item, showItemMenu.slotIndex)}
-          className={`w-full p-2 ${theme.secondary} rounded flex items-center gap-2 hover:bg-gray-700/40`}
+          className={`w-full p-2 ${activeTheme.secondary} rounded flex items-center gap-2 hover:bg-gray-700/40`}
         >
           <ArrowLeft className="w-4 h-4" /> Return to Inventory
         </button>
