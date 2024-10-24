@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Settings, X, User, Trash2, ArrowLeft, Layout, Palette } from 'lucide-react';
+import { Settings, X, User, Trash2, ArrowLeft, Layout, Palette,Box,Zap,Package } from 'lucide-react';
 import EnhancedSettingsModal from './Setting'
 import {
   hat,
@@ -15,6 +15,16 @@ import {
 const ItemTypes = {
   INVENTORY_ITEM: 'inventoryItem',
   QUICKSLOT_ITEM: 'quickslotItem'
+};
+
+const equipmentImages = {
+  hat: hat,
+  watch: watch,
+  armor:rifle,
+  shirt: shirt,
+  weapon: rifle,
+  pants: trousers,
+  shoes:sport_shoe
 };
 
 const defaultThemes = {
@@ -54,11 +64,11 @@ const defaultThemes = {
     hover: 'hover:bg-purple-600/40'     // Purple hover effect with transparency
   },
   blackGold: {
-    primary: 'bg-black-900',            // Deep black background
-    secondary: 'bg-gray-800/50',        // Dark gray with transparency
-    accent: 'border-yellow-400',        // Gold accent for borders
-    text: 'text-yellow-200',            // Light gold text for contrast
-    hover: 'hover:bg-yellow-600/40'     // Gold hover effect with transparency
+    primary: 'bg-gray-900/95',
+    secondary: 'bg-gray-800/50',
+    accent: 'border-yellow-500',
+    text: 'text-yellow-100',
+    hover: 'hover:bg-gray-700/60'
   },
   whiteBlue: { // New white and blue theme
     primary: 'bg-white/80',
@@ -81,10 +91,28 @@ const initialInventory = [
   { id: 8, name: "Key", icon: "🔑", quantity: 1 }
 ];
 
-const defaultLayout = {
-  character: { gridColumn: '1', gridRow: '1' },
-  quickSlots: { gridColumn: '2', gridRow: '1' },
-  inventory: { gridColumn: '3', gridRow: '1' }
+const layoutPresets = {
+  standard: {
+    container: 'h-screen w-screen fixed inset-0 p-8 bg-black/95',
+    gridLayout: 'grid grid-cols-[160px_1fr_250px] grid-rows-[1fr_120px] gap-10 h-full max-w-[1800px] mx-auto', // reduced from 200px to 120px
+    inventoryGrid: 'grid-cols-8 gap-3',
+    quickSlotsGrid: 'grid-cols-2 gap-3',
+    groundItemsGrid: 'grid-cols-8 gap-3'
+  },
+  compact: {
+    container: 'h-screen w-screen fixed inset-0 p-4 bg-black/95',
+    gridLayout: 'grid grid-cols-[250px_1fr_280px] grid-rows-[1fr_100px] gap-4 h-full max-w-[1600px] mx-auto', // reduced from 180px to 100px
+    inventoryGrid: 'grid-cols-6 gap-2',
+    quickSlotsGrid: 'grid-cols-2 gap-2',
+    groundItemsGrid: 'grid-cols-6 gap-2'
+  },
+  widescreen: {
+    container: 'h-screen w-screen fixed inset-0 p-10 bg-black/95',
+    gridLayout: 'grid grid-cols-[320px_1fr_320px] grid-rows-[1fr_140px] gap-8 h-full max-w-[2000px] mx-auto', // reduced from 220px to 140px
+    inventoryGrid: 'grid-cols-10 gap-4',
+    quickSlotsGrid: 'grid-cols-2 gap-4',
+    groundItemsGrid: 'grid-cols-10 gap-4'
+  }
 };
 
 
@@ -102,10 +130,14 @@ export default function AestheticInventory() {
     return savedTheme ? JSON.parse(savedTheme) : defaultThemes.blackGold;
   });
   
-  const [layout, setLayout] = useState(() => {
-    const savedLayout = localStorage.getItem('customLayout');
-    return savedLayout ? JSON.parse(savedLayout) : defaultLayout;
-  });
+  // const [layout, setLayout] = useState(() => {
+  //   const savedLayout = localStorage.getItem('customLayout');
+  //   return savedLayout ? JSON.parse(savedLayout) : defaultLayout;
+  // });
+  const [activeLayout, setActiveLayout] = useState('standard');
+
+  const currentLayout = layoutPresets[activeLayout];
+
   
   const [settingsTab, setSettingsTab] = useState('theme');
 
@@ -229,82 +261,124 @@ export default function AestheticInventory() {
     setShowItemMenu({ item, slotIndex });
   };
 
+  // Add this to your initialState
+const initialGroundItems = [
+  { id: 'g1', name: "Dropped Health Pack", icon: "🧰", quantity: 1 },
+  { id: 'g2', name: "Abandoned Ammo", icon: "🎯", quantity: 50 },
+  { id: 'g3', name: "Lost Key", icon: "🔑", quantity: 1 }
+];
+
+// Add this state to your component
+const [groundItems, setGroundItems] = useState(initialGroundItems);
+
+// Add this function to handle picking up items
+const handlePickupItem = (item, index) => {
+  const existingItem = inventory.find(inv => inv.id === item.id);
+  if (existingItem) {
+    setInventory(inventory.map(inv =>
+      inv.id === item.id 
+        ? { ...inv, quantity: inv.quantity + item.quantity }
+        : inv
+    ));
+  } else {
+    setInventory([...inventory, item]);
+  }
+  setGroundItems(groundItems.filter((_, i) => i !== index));
+};
+
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="min-h-screen bg-black/95 text-white p-8">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Character Equipment Section */}
-          <div style={layout.character} className={`${activeTheme.primary} rounded-lg p-6 border border-gray-800`}>
-            <div className="relative aspect-[3/4] flex items-center justify-center">
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20">
-                <div className="h-full w-full flex items-center justify-center">
-                  <div className="w-48 h-72 bg-gray-900/50 rounded-full"></div>
-                </div>
-              </div>
-              
-              <div className="absolute inset-0 grid grid-cols-3 gap-4 p-4">
-                <EquipmentSlot position="top-0 left-1/2 -translate-x-1/2" theme={activeTheme} image={hat} label="Hat" />
-                <EquipmentSlot position="top-1/4 left-0" theme={activeTheme} image={watch} label="Watch" />
-                <EquipmentSlot position="top-1/4 right-0" theme={activeTheme} image={rifle} label="Armor" />
-                <EquipmentSlot position="top-1/2 left-0" theme={activeTheme} image={shirt} label="Shirt" />
-                <EquipmentSlot position="top-1/2 right-0" theme={activeTheme} image={rifle} label="Weapon" />
-                <EquipmentSlot position="bottom-1/4 left-1/2 -translate-x-1/2" theme={activeTheme} image={trousers} label="Pants" />
-                <EquipmentSlot position="bottom-0 left-1/2 -translate-x-1/2" theme={activeTheme} image={sport_shoe} label="Shoes" />
-              </div>
-            </div>
+        <div className={currentLayout.container}>
+        <div className={currentLayout.gridLayout}>
+     {/* Character Equipment Panel */}
+     <div className={`${activeTheme.primary} rounded-lg border ${activeTheme.accent} flex flex-col`}>
+          <h2 className={`${activeTheme.text} text-md font-bold p-4 flex items-center gap-2 border-b ${activeTheme.accent}`}>
+            <User className="w-4 h-4" />
+          </h2>
+          <div className="flex-1 p-4 space-y-1 overflow-y-auto">
+            {['Hat', 'Watch', 'Armor', 'Shirt', 'Weapon', 'Pants', 'Shoes'].map((slot) => (
+              <EquipmentSlot
+                key={slot}
+                theme={activeTheme}
+                image={equipmentImages[slot.toLowerCase()]}
+                label={slot}
+              />
+            ))}
           </div>
-
-          {/* Quick Slots Section */}
-          <div style={layout.quickSlots} className={`${activeTheme.primary} rounded-lg p-6 border border-gray-800`}>
-            <h2 className={`${activeTheme.text} text-xl font-bold mb-4`}>Quick Access</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {quickSlots.map((item, index) => (
-                <QuickSlot 
-                  key={index} 
-                  item={item} 
-                  theme={activeTheme} 
-                  index={index}
-                  onClick={(e) => item && handleItemClick(e, item, index)}
-                  onAction={handleItemAction}
-                  onDrop={(item) => moveToQuickSlot(item, index)}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Inventory Grid Section */}
-          <div style={layout.inventory} className={`${activeTheme.primary} rounded-lg p-6 border border-gray-800`}>
-            <h2 className={`${activeTheme.text} text-xl font-bold mb-4`}>Inventory</h2>
-            <div className="grid grid-cols-4 gap-3">
+        </div>
+         {/* Main Inventory */}
+         <div className={`${activeTheme.primary} rounded-lg border ${activeTheme.accent} flex flex-col`}>
+          <h2 className={`${activeTheme.text} text-lg font-bold p-4 flex items-center gap-2 border-b ${activeTheme.accent}`}>
+            <Package className="w-5 h-5" /> Inventory
+          </h2>
+          <div className="flex-1 p-4 overflow-y-auto">
+            <div className={`grid ${currentLayout.inventoryGrid}`}>
               {inventory.map((item, index) => (
                 <InventoryItem 
-                  key={index} 
-                  item={item} 
+                  key={index}
+                  item={item}
                   theme={activeTheme}
                   onClick={(e) => handleItemClick(e, item)}
-                  onDoubleClick={() => {
-                    const emptySlot = quickSlots.findIndex(slot => !slot);
-                    if (emptySlot !== -1) {
-                      moveToQuickSlot(item, emptySlot);
-                    }
-                  }}
                 />
               ))}
-              {Array.from({ length: Math.max(0, 16 - inventory.length) }).map((_, index) => (
+              {Array.from({ length: Math.max(0, 32 - inventory.length) }).map((_, index) => (
                 <EmptySlot key={`empty-${index}`} theme={activeTheme} />
               ))}
             </div>
           </div>
         </div>
 
+          {/* Quick Slots Panel */}
+        <div className={`${activeTheme.primary} rounded-lg border ${activeTheme.accent} flex flex-col`}>
+          <h2 className={`${activeTheme.text} text-lg font-bold p-4 flex items-center gap-2 border-b ${activeTheme.accent}`}>
+            <Zap className="w-5 h-5" /> Quick Access
+          </h2>
+          <div className="flex-1 p-4">
+            <div className={`grid ${currentLayout.quickSlotsGrid}`}>
+              {quickSlots.map((item, index) => (
+                <QuickSlot
+                  key={index}
+                  item={item}
+                  theme={activeTheme}
+                  index={index}
+                  onClick={(e) => item && handleItemClick(e, item, index)}
+                  onDrop={(item) => moveToQuickSlot(item, index)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+
+            {/* Ground Items Panel - Updated to be more compact */}
+            
+          <div className={`col-span-2 ${activeTheme.primary} rounded-lg border ${activeTheme.accent} flex flex-col`}>
+           
+            <div className="flex-1 p-2 overflow-x-auto">
+              <div className={`grid ${currentLayout.groundItemsGrid}`}>
+                {groundItems.map((item, index) => (
+                  <GroundItem
+                    key={index}
+                    item={item}
+                    theme={activeTheme}
+                    onPickup={() => handlePickupItem(item, index)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        
+        </div>
+
+
       {/* Settings Button */}
-        <button 
+      <button 
           onClick={() => setShowSettings(true)}
-          className="fixed bottom-4 right-4 p-3 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors"
+          className="fixed bottom-6 right-6 p-4 bg-gray-800/90 rounded-full hover:bg-gray-700 transition-colors"
         >
           <Settings className="w-6 h-6" />
         </button>
+
 
         {/* Enhanced Settings Modal */}
         {showSettings && (
@@ -313,8 +387,8 @@ export default function AestheticInventory() {
             onClose={() => setShowSettings(false)} // Pass the function to close the modal
             theme={activeTheme}
             onThemeChange={setActiveTheme} // Pass the state setter function
-            layout={layout}
-            onLayoutChange={setLayout} // Pass the layout setter function
+            layout={activeLayout}
+            onLayoutChange={setActiveLayout} // Pass the layout setter function
           />
         )}
         {/* Item Action Menu */}
@@ -377,33 +451,32 @@ export default function AestheticInventory() {
     </DndProvider>
   );
 }
-const InventoryItem = ({ item, theme, onDoubleClick, onClick }) => {
+const InventoryItem = ({ item, theme, onClick }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.INVENTORY_ITEM,
-    item: () => ({ ...item }), // Create a fresh copy for each drag operation
+    item: () => ({ ...item }),
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
     })
-  }), [item]); // Add dependency array to recreate drag source when item changes
+  }), [item]);
 
   return (
     <div
       ref={drag}
-      className={`${theme.secondary} ${theme.hover} aspect-square rounded-lg border ${theme.accent}
-        p-4 flex flex-col items-center justify-center cursor-move transition-all duration-200
+      className={`${theme.secondary} ${theme.hover} aspect-square rounded border ${theme.accent}
+        p-2 flex flex-col items-center justify-center cursor-move transition-all duration-200
         ${isDragging ? 'opacity-50' : ''}`}
-      style={{ opacity: isDragging ? 0.5 : 1 }}
-      onDoubleClick={onDoubleClick}
       onClick={onClick}
     >
-      <span className="text-2xl mb-1">{item.icon}</span>
-      <span className="text-xs text-center">{item.name}</span>
+      <span className="text-xl mb-0.5">{item.icon}</span>
+      <span className="text-xs text-center truncate w-full">{item.name}</span>
       <span className="text-xs text-gray-400">x{item.quantity}</span>
     </div>
   );
 };
 
-const QuickSlot = ({ item, theme, index, onClick, onAction, onDrop }) => {
+// Updated quick slot component
+const QuickSlot = ({ item, theme, index, onClick, onDrop }) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: ItemTypes.INVENTORY_ITEM,
     drop: (droppedItem) => {
@@ -413,42 +486,74 @@ const QuickSlot = ({ item, theme, index, onClick, onAction, onDrop }) => {
     collect: (monitor) => ({
       isOver: !!monitor.isOver()
     })
-  }), [onDrop]); // Add dependency array to recreate drop target when onDrop changes
+  }), [onDrop]);
 
   return (
     <div
       ref={drop}
-      className={`${theme.secondary} ${theme.hover} aspect-square rounded-lg border ${theme.accent}
-        p-4 flex flex-col items-center justify-center relative transition-all duration-200
+      className={`${theme.secondary} ${theme.hover} aspect-square rounded border ${theme.accent}
+        p-2 flex flex-col items-center justify-center relative transition-all duration-200
         ${isOver ? 'border-2 border-white' : ''}`}
       onClick={onClick}
     >
-      <div className="absolute top-2 left-2 text-xs bg-black/50 px-2 py-1 rounded">
+      <div className="absolute top-1 left-1 text-xs bg-black/50 px-1.5 py-0.5 rounded">
         {index + 1}
       </div>
       {item ? (
         <>
-          <span className="text-2xl mb-1">{item.icon}</span>
-          <span className="text-xs text-center">{item.name}</span>
+          <span className="text-xl mb-0.5">{item.icon}</span>
+          <span className="text-xs text-center truncate w-full">{item.name}</span>
           <span className="text-xs text-gray-400">x{item.quantity}</span>
         </>
       ) : (
-        <span className="text-gray-500 text-sm">Empty</span>
+        <span className="text-gray-500 text-xs">Empty</span>
       )}
     </div>
   );
 };
 
-// Updated moveToQuickSlot function with improved state management
-
-const EquipmentSlot = ({ position, theme, image, label }) => (
-  <div className={`absolute ${position}`}>
-    <div className={`${theme.secondary} ${theme.hover} w-12 h-12 rounded-lg border ${theme.accent}
-      flex items-center justify-center transition-colors duration-200`}>
-      <img src={image} alt={label} className="w-10 h-10 object-contain" /> {/* Image display */}
+// More compact equipment slot
+const EquipmentSlot = ({ theme, image, label }) => (
+  <div className="flex items-center gap-2 p-1">
+    <div className={`
+      ${theme.secondary} 
+      ${theme.hover} 
+      w-10 
+      h-10 
+      rounded 
+      border 
+      ${theme.accent}
+      flex 
+      items-center 
+      justify-center 
+      transition-colors 
+      duration-200
+    `}>
+      <img 
+        src={image} 
+        alt={label} 
+        className="w-8 h-8 object-contain" 
+      />
     </div>
+    <span className={`${theme.text} text-sm`}>
+      {label}
+    </span>
   </div>
 );
+
+// More compact ground item
+const GroundItem = ({ item, theme, onPickup }) => (
+  <div
+    className={`${theme.secondary} ${theme.hover} aspect-square rounded border ${theme.accent}
+      p-1 flex flex-col items-center justify-center cursor-pointer transition-all duration-200`}
+    onClick={onPickup}
+  >
+    <span className="text-lg mb-0.5">{item.icon}</span>
+    <span className="text-xs text-center truncate w-full">{item.name}</span>
+    <span className="text-xs text-gray-400">x{item.quantity}</span>
+  </div>
+);
+
 
 const EmptySlot = ({ theme }) => (
   <div className={`${theme.secondary} ${theme.hover} aspect-square rounded-lg border ${theme.accent}
