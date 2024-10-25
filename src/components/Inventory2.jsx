@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Settings, X, User, Trash2, ArrowLeft, Layout, Palette,Box,Zap,Package } from 'lucide-react';
@@ -28,54 +28,12 @@ const equipmentImages = {
 };
 
 const defaultThemes = {
-  red: {
-    primary: 'bg-black-900',            // Deep black background
-    secondary: 'bg-red-800/40',         // Dark red with transparency
-    accent: 'border-red-500',           // Red accent for borders
-    text: 'text-red-200',               // Lighter red text for contrast
-    hover: 'hover:bg-red-600/40'        // Red hover effect with transparency
-  },
-  blue: {
-    primary: 'bg-black-900',            // Deep black background
-    secondary: 'bg-blue-800/40',        // Dark blue with transparency
-    accent: 'border-blue-500',          // Blue accent for borders
-    text: 'text-blue-200',              // Light blue text for contrast
-    hover: 'hover:bg-blue-600/40'       // Blue hover effect with transparency
-  },
-  green: {
-    primary: 'bg-black-900',            // Deep black background
-    secondary: 'bg-emerald-800/40',     // Dark green with transparency
-    accent: 'border-emerald-500',       // Emerald accent for borders
-    text: 'text-emerald-200',           // Light green text for contrast
-    hover: 'hover:bg-emerald-600/40'    // Emerald hover effect with transparency
-  },
-  pink: {
-    primary: 'bg-black-900',            // Deep black background
-    secondary: 'bg-pink-800/40',        // Dark pink with transparency
-    accent: 'border-pink-500',          // Pink accent for borders
-    text: 'text-pink-200',              // Light pink text for contrast
-    hover: 'hover:bg-pink-600/40'       // Pink hover effect with transparency
-  },
-  purple: {
-    primary: 'bg-black-900',            // Deep black background
-    secondary: 'bg-purple-800/40',      // Dark purple with transparency
-    accent: 'border-purple-500',        // Purple accent for borders
-    text: 'text-purple-200',            // Light purple text for contrast
-    hover: 'hover:bg-purple-600/40'     // Purple hover effect with transparency
-  },
-  blackGold: {
-    primary: 'bg-gray-900/95',
-    secondary: 'bg-gray-800/50',
-    accent: 'border-yellow-500',
-    text: 'text-yellow-100',
-    hover: 'hover:bg-gray-700/60'
-  },
-  whiteBlue: { // New white and blue theme
-    primary: 'bg-white/80',
-    secondary: 'bg-blue-400/60',
-    accent: 'border-blue-300',
-    text: 'text-blue-800',
-    hover: 'hover:bg-blue-500/60'
+  Default: {
+    primary: 'bg-gray-900',
+    secondary: 'bg-gray-800',
+    accent: 'border-gray-700',
+    text: 'text-gray-100',
+    hover: 'hover:bg-emerald-200/40'
   }
 };
 
@@ -94,17 +52,17 @@ const initialInventory = [
 const layoutPresets = {
   standard: {
     container: 'h-screen w-screen fixed inset-0 p-8 bg-black/95',
-    gridLayout: 'grid grid-cols-[160px_1fr_250px] grid-rows-[1fr_120px] gap-10 h-full max-w-[1800px] mx-auto', // reduced from 200px to 120px
-    inventoryGrid: 'grid-cols-8 gap-3',
+    gridLayout: 'grid grid-cols-[100px_550px_250px] grid-rows-[1fr_120px] gap-10 h-full max-w-[1800px] flex justify-between', // reduced from 200px to 120px
+    inventoryGrid: 'grid-cols-5 gap-3',
     quickSlotsGrid: 'grid-cols-2 gap-3',
     groundItemsGrid: 'grid-cols-8 gap-3'
   },
   compact: {
     container: 'h-screen w-screen fixed inset-0 p-4 bg-black/95',
-    gridLayout: 'grid grid-cols-[250px_1fr_280px] grid-rows-[1fr_100px] gap-4 h-full max-w-[1600px] mx-auto', // reduced from 180px to 100px
-    inventoryGrid: 'grid-cols-6 gap-2',
+    gridLayout: 'grid grid-cols-[250px_460px_200px] grid-rows-[1fr_100px] gap-4 h-full max-w-[1600px] flex justify-between', // reduced from 180px to 100px
+    inventoryGrid: 'grid-cols-5 gap-2',
     quickSlotsGrid: 'grid-cols-2 gap-2',
-    groundItemsGrid: 'grid-cols-6 gap-2'
+    groundItemsGrid: 'grid-cols-6 gap-2 h-[80px]'
   },
   widescreen: {
     container: 'h-screen w-screen fixed inset-0 p-10 bg-black/95',
@@ -114,6 +72,7 @@ const layoutPresets = {
     groundItemsGrid: 'grid-cols-10 gap-4'
   }
 };
+
 
 
 export default function AestheticInventory() {
@@ -127,7 +86,7 @@ export default function AestheticInventory() {
 
   const [activeTheme, setActiveTheme] = useState(() => {
     const savedTheme = localStorage.getItem('customTheme');
-    return savedTheme ? JSON.parse(savedTheme) : defaultThemes.blackGold;
+    return savedTheme ? JSON.parse(savedTheme) : defaultThemes.Default;
   });
   
   // const [layout, setLayout] = useState(() => {
@@ -140,6 +99,11 @@ export default function AestheticInventory() {
 
   
   const [settingsTab, setSettingsTab] = useState('theme');
+
+  useEffect(() => {
+    localStorage.setItem('inventory', JSON.stringify(inventory));
+    localStorage.setItem('quickSlots', JSON.stringify(quickSlots));
+  }, [inventory, quickSlots]);
 
   const handleItemAction = (action, item, slotIndex = null) => {
     switch (action) {
@@ -291,9 +255,9 @@ const handlePickupItem = (item, index) => {
         <div className={currentLayout.container}>
         <div className={currentLayout.gridLayout}>
      {/* Character Equipment Panel */}
-     <div className={`${activeTheme.primary} rounded-lg border ${activeTheme.accent} flex flex-col`}>
-          <h2 className={`${activeTheme.text} text-md font-bold p-4 flex items-center gap-2 border-b ${activeTheme.accent}`}>
-            <User className="w-4 h-4" />
+     <div className={`rounded-lg flex flex-col`}>
+          <h2 className={`${activeTheme.text} text-md font-bold p-4 flex justify-center items-center gap-2 ${activeTheme.accent}`}>
+            <User className="w-5 h-5" />
           </h2>
           <div className="flex-1 p-4 space-y-1 overflow-y-auto">
             {['Hat', 'Watch', 'Armor', 'Shirt', 'Weapon', 'Pants', 'Shoes'].map((slot) => (
@@ -307,8 +271,8 @@ const handlePickupItem = (item, index) => {
           </div>
         </div>
          {/* Main Inventory */}
-         <div className={`${activeTheme.primary} rounded-lg border ${activeTheme.accent} flex flex-col`}>
-          <h2 className={`${activeTheme.text} text-lg font-bold p-4 flex items-center gap-2 border-b ${activeTheme.accent}`}>
+         <div className={`rounded-lg ${activeTheme.accent} flex flex-col`}>
+          <h2 className={`${activeTheme.text} text-lg font-bold p-4 flex items-center gap-2  ${activeTheme.accent}`}>
             <Package className="w-5 h-5" /> Inventory
           </h2>
           <div className="flex-1 p-4 overflow-y-auto">
@@ -321,7 +285,7 @@ const handlePickupItem = (item, index) => {
                   onClick={(e) => handleItemClick(e, item)}
                 />
               ))}
-              {Array.from({ length: Math.max(0, 32 - inventory.length) }).map((_, index) => (
+              {Array.from({ length: Math.max(0, 20 - inventory.length) }).map((_, index) => (
                 <EmptySlot key={`empty-${index}`} theme={activeTheme} />
               ))}
             </div>
@@ -329,8 +293,8 @@ const handlePickupItem = (item, index) => {
         </div>
 
           {/* Quick Slots Panel */}
-        <div className={`${activeTheme.primary} rounded-lg border ${activeTheme.accent} flex flex-col`}>
-          <h2 className={`${activeTheme.text} text-lg font-bold p-4 flex items-center gap-2 border-b ${activeTheme.accent}`}>
+        <div className={`rounded-lg ${activeTheme.accent} flex flex-col`}>
+          <h2 className={`${activeTheme.text} text-lg font-bold p-4 flex items-center gap-2 ${activeTheme.accent}`}>
             <Zap className="w-5 h-5" /> Quick Access
           </h2>
           <div className="flex-1 p-4">
@@ -352,7 +316,7 @@ const handlePickupItem = (item, index) => {
 
             {/* Ground Items Panel - Updated to be more compact */}
             
-          <div className={`col-span-2 ${activeTheme.primary} rounded-lg border ${activeTheme.accent} flex flex-col`}>
+          <div className={`col-span-2 rounded-lg ${activeTheme.accent} flex flex-col`}>
            
             <div className="flex-1 p-2 overflow-x-auto">
               <div className={`grid ${currentLayout.groundItemsGrid}`}>
@@ -535,9 +499,6 @@ const EquipmentSlot = ({ theme, image, label }) => (
         className="w-8 h-8 object-contain" 
       />
     </div>
-    <span className={`${theme.text} text-sm`}>
-      {label}
-    </span>
   </div>
 );
 

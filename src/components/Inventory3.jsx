@@ -1,297 +1,236 @@
 import React, { useState } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Settings, X, User, Trash2 } from 'lucide-react';
+import { Package, User, Zap, Settings, Save, Layout, PaintBucket } from 'lucide-react';
+import { Slider } from './ui/slider';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
 
-const ItemTypes = {
-  INVENTORY_ITEM: 'inventoryItem'
-};
-
-const defaultThemes = {
-  red: {
-    primary: 'bg-red-900/40',
-    secondary: 'bg-red-800/30',
-    accent: 'border-red-500',
-    text: 'text-red-100',
-    hover: 'hover:bg-red-700/40'
+// Theme definitions
+const THEMES = {
+  Default: {
+    primary: 'bg-gray-900',
+    secondary: 'bg-gray-800',
+    accent: 'border-gray-700',
+    text: 'text-gray-100',
   },
-  blue: {
-    primary: 'bg-blue-900/40',
-    secondary: 'bg-blue-800/30',
-    accent: 'border-blue-500',
-    text: 'text-blue-100',
-    hover: 'hover:bg-blue-700/40'
-  },
-  green: {
-    primary: 'bg-emerald-900/40',
-    secondary: 'bg-emerald-800/30',
-    accent: 'border-emerald-500',
+  Emerald: {
+    primary: 'bg-emerald-900',
+    secondary: 'bg-emerald-800',
+    accent: 'border-emerald-700',
     text: 'text-emerald-100',
-    hover: 'hover:bg-emerald-700/40'
-  }
+  },
+  Azure: {
+    primary: 'bg-blue-900',
+    secondary: 'bg-blue-800',
+    accent: 'border-blue-700',
+    text: 'text-blue-100',
+  },
+  Rose: {
+    primary: 'bg-rose-900',
+    secondary: 'bg-rose-800',
+    accent: 'border-rose-700',
+    text: 'text-rose-100',
+  },
 };
 
-const initialInventory = [
-  { id: 1, name: "Health Pack", icon: "🧰", quantity: 5 },
-  { id: 2, name: "MP5", icon: "🔫", quantity: 1 },
-  { id: 3, name: "Ammo", icon: "🎯", quantity: 100 },
-  { id: 4, name: "Grenade", icon: "💣", quantity: 3 },
-  { id: 5, name: "Bandage", icon: "🩹", quantity: 10 },
-  { id: 6, name: "Water", icon: "💧", quantity: 2 },
-  { id: 7, name: "Food", icon: "🍖", quantity: 4 },
-  { id: 8, name: "Key", icon: "🔑", quantity: 1 }
-];
-
-export default function AestheticInventory() {
-  const [activeTheme, setActiveTheme] = useState('red');
-  const [showSettings, setShowSettings] = useState(false);
-  const [inventory, setInventory] = useState(initialInventory);
-  const [quickSlots, setQuickSlots] = useState(Array(4).fill(null));
-  const [showItemMenu, setShowItemMenu] = useState(null);
-  const theme = defaultThemes[activeTheme];
-
-  const handleItemAction = (action, item, slotIndex = null) => {
-    switch (action) {
-      case 'use':
-        if (item.quantity > 1) {
-          const updatedInventory = inventory.map(inv => 
-            inv.id === item.id ? { ...inv, quantity: inv.quantity - 1 } : inv
-          );
-          setInventory(updatedInventory);
-          if (slotIndex !== null) {
-            const updatedQuickSlots = [...quickSlots];
-            updatedQuickSlots[slotIndex] = { ...item, quantity: item.quantity - 1 };
-            setQuickSlots(updatedQuickSlots);
-          }
-        } else {
-          if (slotIndex !== null) {
-            const updatedQuickSlots = [...quickSlots];
-            updatedQuickSlots[slotIndex] = null;
-            setQuickSlots(updatedQuickSlots);
-          }
-          setInventory(inventory.filter(inv => inv.id !== item.id));
-        }
-        break;
-      case 'give':
-        // Simulate giving item to another player
-        if (item.quantity > 1) {
-          const updatedInventory = inventory.map(inv => 
-            inv.id === item.id ? { ...inv, quantity: inv.quantity - 1 } : inv
-          );
-          setInventory(updatedInventory);
-        } else {
-          setInventory(inventory.filter(inv => inv.id !== item.id));
-        }
-        break;
-      default:
-        break;
-    }
-    setShowItemMenu(null);
-  };
-
-  const moveToQuickSlot = (item, slotIndex) => {
-    const updatedQuickSlots = [...quickSlots];
-    updatedQuickSlots[slotIndex] = item;
-    setQuickSlots(updatedQuickSlots);
-  };
+// Draggable Panel Component
+const DraggablePanel = ({ children, id, onLayoutChange, gridArea }) => {
+  const [{ isDragging }, drag] = useDrag({
+    type: 'PANEL',
+    item: { id },
+    collect: monitor => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="min-h-screen bg-black/95 text-white p-8">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Character Equipment Section */}
-          <div className={`${theme.primary} rounded-lg p-6 border border-gray-800`}>
-            <div className="relative aspect-[3/4] flex items-center justify-center">
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20">
-                <div className="h-full w-full flex items-center justify-center">
-                  <div className="w-48 h-72 bg-gray-900/50 rounded-full"></div>
-                </div>
-              </div>
-              
-              <div className="absolute inset-0 grid grid-cols-3 gap-4 p-4">
-                <EquipmentSlot position="top-0 left-1/2 -translate-x-1/2" theme={theme} label="Hat" />
-                <EquipmentSlot position="top-1/4 left-0" theme={theme} label="Watch" />
-                <EquipmentSlot position="top-1/4 right-0" theme={theme} label="Armor" />
-                <EquipmentSlot position="top-1/2 left-0" theme={theme} label="Shirt" />
-                <EquipmentSlot position="top-1/2 right-0" theme={theme} label="Weapon" />
-                <EquipmentSlot position="bottom-1/4 left-1/2 -translate-x-1/2" theme={theme} label="Pants" />
-                <EquipmentSlot position="bottom-0 left-1/2 -translate-x-1/2" theme={theme} label="Shoes" />
-              </div>
+    <div
+      ref={drag}
+      style={{
+        opacity: isDragging ? 0.5 : 1,
+        gridArea,
+        cursor: 'move',
+      }}
+      className="relative"
+    >
+      {children}
+    </div>
+  );
+};
+
+// Main Component
+const InventorySystem = () => {
+  const [theme, setTheme] = useState(THEMES.Default);
+
+  const [layout, setLayout] = useState({
+    columns: 4,
+    gap: 4,
+    panelSizes: {
+      equipment: { w: 1, h: 2 },
+      inventory: { w: 2, h: 2 },
+      quickAccess: { w: 1, h: 1 },
+      ground: { w: 4, h: 1 },
+    },
+  });
+
+  const [showSettings, setShowSettings] = useState(false);
+  const [inventory] = useState(Array(20).fill(null));
+  const [quickSlots] = useState(Array(8).fill(null));
+
+  // Settings Modal
+  const SettingsModal = ({ show, onClose }) => (
+    <Dialog open={show} onOpenChange={onClose}>
+      <DialogContent className={`${theme.primary} border-0 max-w-2xl`}>
+        <DialogHeader>
+          <DialogTitle className={`${theme.text} flex items-center gap-2`}>
+            <Settings className="w-5 h-5" /> Customize Interface
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6 p-4">
+          {/* Layout Controls */}
+          <div className={`${theme.secondary} p-4 rounded-lg space-y-4`}>
+            <h3 className={`${theme.text} font-bold flex items-center gap-2`}>
+              <Layout className="w-4 h-4" /> Layout Settings
+            </h3>
+            
+            <div className="space-y-2">
+              <label className={`${theme.text} text-sm`}>Grid Columns</label>
+              <Slider
+                defaultValue={[layout.columns]}
+                max={6}
+                min={2}
+                step={1}
+                onValueChange={([value]) => setLayout(prev => ({ ...prev, columns: value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className={`${theme.text} text-sm`}>Grid Gap</label>
+              <Slider
+                defaultValue={[layout.gap]}
+                max={8}
+                min={0}
+                step={1}
+                onValueChange={([value]) => setLayout(prev => ({ ...prev, gap: value }))}
+              />
             </div>
           </div>
 
-          {/* Quick Slots Section */}
-          <div className={`${theme.primary} rounded-lg p-6 border border-gray-800`}>
-            <h2 className={`${theme.text} text-xl font-bold mb-4`}>Quick Access</h2>
+          {/* Theme Controls */}
+          <div className={`${theme.secondary} p-4 rounded-lg space-y-4`}>
+            <h3 className={`${theme.text} font-bold flex items-center gap-2`}>
+              <PaintBucket className="w-4 h-4" /> Theme Customization
+            </h3>
+            
             <div className="grid grid-cols-2 gap-4">
-              {quickSlots.map((item, index) => (
-                <QuickSlot 
-                  key={index} 
-                  item={item} 
-                  theme={theme} 
-                  index={index} 
-                  onAction={handleItemAction}
-                  onDrop={(item) => moveToQuickSlot(item, index)}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Inventory Grid Section */}
-          <div className={`${theme.primary} rounded-lg p-6 border border-gray-800`}>
-            <h2 className={`${theme.text} text-xl font-bold mb-4`}>Inventory</h2>
-            <div className="grid grid-cols-4 gap-3">
-              {inventory.map((item, index) => (
-                <InventoryItem 
-                  key={index} 
-                  item={item} 
-                  theme={theme}
-                  onDoubleClick={() => {
-                    const emptySlot = quickSlots.findIndex(slot => !slot);
-                    if (emptySlot !== -1) {
-                      moveToQuickSlot(item, emptySlot);
-                    }
-                  }}
-                  onAction={handleItemAction}
-                />
-              ))}
-              {Array.from({ length: Math.max(0, 16 - inventory.length) }).map((_, index) => (
-                <EmptySlot key={`empty-${index}`} theme={theme} />
+              {Object.entries(THEMES).map(([themeName, themeColors]) => (
+                <button
+                  key={themeName}
+                  onClick={() => setTheme(themeColors)}
+                  className={`p-2 rounded-lg ${theme.secondary} hover:opacity-80 transition-opacity`}
+                >
+                  <div className={`h-8 rounded ${themeColors.primary}`} />
+                  <p className={`${theme.text} text-sm mt-2`}>{themeName}</p>
+                </button>
               ))}
             </div>
           </div>
         </div>
+      </DialogContent>
+    </Dialog>
+  );
+
+  return (
+    <DndProvider backend={HTML5Backend}>
+      <div className={`min-h-screen ${theme.primary} p-6`}>
+        <div 
+          style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${layout.columns}, 1fr)`,
+            gap: `${layout.gap * 0.25}rem`,
+          }}
+          className="w-full max-w-7xl mx-auto"
+        >
+          {/* Equipment Panel */}
+          <DraggablePanel id="equipment">
+            <div className={`${theme.secondary} rounded-lg border ${theme.accent} flex flex-col`}>
+              <h2 className={`${theme.text} text-lg font-bold p-4 flex items-center gap-2 border-b ${theme.accent}`}>
+                <User className="w-5 h-5" /> Equipment
+              </h2>
+              <div className="flex-1 p-4 space-y-2">
+                {['Head', 'Chest', 'Legs', 'Feet', 'Weapon', 'Shield'].map((slot) => (
+                  <div
+                    key={slot}
+                    className={`${theme.primary} rounded p-2 flex items-center gap-2 ${theme.text}`}
+                  >
+                    {slot}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </DraggablePanel>
+
+          {/* Main Inventory */}
+          <DraggablePanel id="inventory" style={{ gridColumn: 'span 2' }}>
+            <div className={`${theme.secondary} rounded-lg border ${theme.accent} flex flex-col`}>
+              <h2 className={`${theme.text} text-lg font-bold p-4 flex items-center gap-2 border-b ${theme.accent}`}>
+                <Package className="w-5 h-5" /> Inventory
+              </h2>
+              <div className="flex-1 p-4">
+                <div className="grid grid-cols-5 gap-2">
+                  {inventory.map((_, i) => (
+                    <div
+                      key={i}
+                      className={`${theme.primary} rounded aspect-square`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </DraggablePanel>
+
+          {/* Quick Access */}
+          <DraggablePanel id="quickAccess">
+            <div className={`${theme.secondary} rounded-lg border ${theme.accent} flex flex-col`}>
+              <h2 className={`${theme.text} text-lg font-bold p-4 flex items-center gap-2 border-b ${theme.accent}`}>
+                <Zap className="w-5 h-5" /> Quick Access
+              </h2>
+              <div className="flex-1 p-4">
+                <div className="grid grid-cols-4 gap-2">
+                  {quickSlots.map((_, i) => (
+                    <div
+                      key={i}
+                      className={`${theme.primary} rounded aspect-square`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </DraggablePanel>
+        </div>
 
         {/* Settings Button */}
-        <button 
+        <button
           onClick={() => setShowSettings(true)}
-          className="fixed bottom-4 right-4 p-3 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors"
+          className={`fixed bottom-6 right-6 p-4 ${theme.secondary} rounded-full hover:opacity-80 transition-opacity`}
         >
           <Settings className="w-6 h-6" />
         </button>
 
         {/* Settings Modal */}
-        {showSettings && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-            <div className={`${theme.primary} rounded-lg p-6 max-w-md w-full`}>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold">Theme Settings</h2>
-                <button onClick={() => setShowSettings(false)}>
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                {Object.keys(defaultThemes).map((themeName) => (
-                  <button
-                    key={themeName}
-                    onClick={() => setActiveTheme(themeName)}
-                    className={`w-full p-3 rounded-lg ${defaultThemes[themeName].primary} 
-                      ${activeTheme === themeName ? 'ring-2 ring-white' : ''}`}
-                  >
-                    {themeName.charAt(0).toUpperCase() + themeName.slice(1)} Theme
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Item Action Menu */}
-        {showItemMenu && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-            <div className={`${theme.primary} rounded-lg p-4 w-48`}>
-              <button
-                onClick={() => handleItemAction('use', showItemMenu.item, showItemMenu.slotIndex)}
-                className={`w-full p-2 mb-2 ${theme.secondary} rounded flex items-center gap-2`}
-              >
-                <Trash2 className="w-4 h-4" /> Use Item
-              </button>
-              <button
-                onClick={() => handleItemAction('give', showItemMenu.item, showItemMenu.slotIndex)}
-                className={`w-full p-2 ${theme.secondary} rounded flex items-center gap-2`}
-              >
-                <User className="w-4 h-4" /> Give Item
-              </button>
-            </div>
-          </div>
-        )}
+        <SettingsModal 
+          show={showSettings}
+          onClose={() => setShowSettings(false)}
+        />
       </div>
     </DndProvider>
   );
-}
-
-const InventoryItem = ({ item, theme, onDoubleClick, onAction }) => {
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: ItemTypes.INVENTORY_ITEM,
-    item: { ...item },
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging()
-    })
-  }));
-
-  return (
-    <div
-      ref={drag}
-      className={`${theme.secondary} ${theme.hover} aspect-square rounded-lg border ${theme.accent}
-        p-4 flex flex-col items-center justify-center cursor-move transition-all duration-200
-        ${isDragging ? 'opacity-50' : ''}`}
-      style={{ opacity: isDragging ? 0.5 : 1 }}
-      onDoubleClick={onDoubleClick}
-      onClick={() => onAction && onAction('use', item)}
-    >
-      <span className="text-2xl mb-1">{item.icon}</span>
-      <span className="text-xs text-center">{item.name}</span>
-      <span className="text-xs text-gray-400">x{item.quantity}</span>
-    </div>
-  );
 };
 
-const QuickSlot = ({ item, theme, index, onAction, onDrop }) => {
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: ItemTypes.INVENTORY_ITEM,
-    drop: (droppedItem) => onDrop(droppedItem),
-    collect: (monitor) => ({
-      isOver: !!monitor.isOver()
-    })
-  }));
-
-  return (
-    <div
-      ref={drop}
-      className={`${theme.secondary} ${theme.hover} aspect-square rounded-lg border ${theme.accent}
-        p-4 flex flex-col items-center justify-center relative transition-all duration-200
-        ${isOver ? 'border-2 border-white' : ''}`}
-      onClick={() => item && onAction('use', item, index)}
-    >
-      <div className="absolute top-2 left-2 text-xs bg-black/50 px-2 py-1 rounded">
-        {index + 1}
-      </div>
-      {item ? (
-        <>
-          <span className="text-2xl mb-1">{item.icon}</span>
-          <span className="text-xs text-center">{item.name}</span>
-          <span className="text-xs text-gray-400">x{item.quantity}</span>
-        </>
-      ) : (
-        <span className="text-gray-500 text-sm">Empty</span>
-      )}
-    </div>
-  );
-};
-
-const EquipmentSlot = ({ position, theme, label }) => (
-  <div className={`absolute ${position}`}>
-    <div className={`${theme.secondary} ${theme.hover} w-12 h-12 rounded-lg border ${theme.accent}
-      flex items-center justify-center transition-colors duration-200`}>
-      <span className="text-xs text-center">{label}</span>
-    </div>
-  </div>
-);
-
-const EmptySlot = ({ theme }) => (
-  <div className={`${theme.secondary} ${theme.hover} aspect-square rounded-lg border ${theme.accent}
-    flex items-center justify-center transition-colors duration-200`}>
-    <span className="text-gray-500 text-sm">Empty</span>
-  </div>
-);
+export default InventorySystem;
