@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Settings, X, Layout, Palette, Box } from 'lucide-react';
 import { HexColorPicker } from 'react-colorful';
+import ThemeSelector from './ui/ThemeSelector';
 
 // Helper function to convert hex to rgba
 const hexToRgba = (hex, alpha = 1) => {
@@ -180,8 +181,9 @@ const EnhancedSettingsModal = ({ show, onClose, theme, onThemeChange, layout, on
         {activeTab === 'theme' ? (
           <div className="space-y-4">
             <h3 className="text-lg font-bold mb-4  text-gray-100/55">Theme Colors</h3>
+            <ThemeSelector onThemeChange={onThemeChange} activeTheme={theme} />
 
-            {Object.entries(theme).map(([key, value]) => (
+            {/* {Object.entries(theme).map(([key, value]) => (
               <ColorPicker
                 key={key}
                 label={key}
@@ -193,7 +195,7 @@ const EnhancedSettingsModal = ({ show, onClose, theme, onThemeChange, layout, on
                   });
                 }}
               />
-            ))}
+            ))} */}
             <div className='text-gray-100/55 text-start mx-10'> <button className='border-white px-4 py-2 rounded bg-gray-700 hover:bg-gray-800' onClick={() => { localStorage.clear();onThemeChange(defaultThemes.Default); }}>
               Reset
             </button></div>
