@@ -3,6 +3,12 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Settings, X, User, Trash2, ArrowLeft, Layout, Palette,Box,Zap,Package } from 'lucide-react';
 import EnhancedSettingsModal from './Setting'
+import ItemMenu from './ui/ItemMenu';
+import EquipmentSlot from './slots/EquipmentSlots';
+import QuickSlot from './slots/QuickSlot';
+import EmptySlot from './slots/EmptySlot';
+import InventoryItem from './slots/InventoryItem';
+import GroundItems from './slots/GroundItems';
 import {
   hat,
   shirt,
@@ -14,7 +20,8 @@ import {
 
 const ItemTypes = {
   INVENTORY_ITEM: 'inventoryItem',
-  QUICKSLOT_ITEM: 'quickslotItem'
+  QUICKSLOT_ITEM: 'quickslotItem',
+  GROUND_ITEM: 'groundItem'
 };
 
 const equipmentImages = {
@@ -46,38 +53,70 @@ const initialInventory = [
   { id: 5, name: "Bandage", icon: "🩹", quantity: 10 },
   { id: 6, name: "Water", icon: "💧", quantity: 2 },
   { id: 7, name: "Food", icon: "🍖", quantity: 4 },
-  { id: 8, name: "Key", icon: "🔑", quantity: 1 }
+  { id: 8, name: "Key", icon: "🔑", quantity: 1 },
+
 ];
 
 const layoutPresets = {
   standard: {
-    container: 'h-screen w-screen fixed inset-0 p-8 bg-black/95',
-    gridLayout: 'grid grid-cols-[100px_600px_250px] gap-4 h-[75vh] max-w-[1800px] flex justify-around', // reduced from 200px to 120px
-    inventoryGrid: 'grid-cols-5 gap-3',
-    quickSlotsGrid: 'grid-cols-2 gap-3',
-    groundItemsGrid: 'grid-cols-8 gap-3'
+    container: 'h-screen w-screen fixed inset-0 p-6 bg-black/95',
+    gridLayout: 'grid grid-cols-[100px_600px_250px] g-2 md:gap-4 h-[60vh] flex justify-around', // reduced from 200px to 120px
+    inventoryGrid: 'grid-cols-5 gap-3 overflow-auto max-h-[60vh]',
+    quickSlotsGrid: 'grid-cols-2 gap-3 overflow-auto max-h-[60vh]',
+    groundItemsGrid: 'col-start-3 col-span-2 grid grid-cols-8 gap-3',
+    
   },
-  compact: {
+  cyberpunk: {
     container: 'h-screen w-screen fixed inset-0 p-4 bg-black/95',
-    gridLayout: 'grid grid-cols-[100px_560px_200px] gap-4 h-[75vh] max-w-[1600px] flex justify-around', // reduced from 180px to 100px
-    inventoryGrid: 'grid-cols-5 gap-2',
-    quickSlotsGrid: 'grid-cols-2 gap-2',
-    groundItemsGrid: 'grid-cols-8 gap-3'
+    gridLayout: 'grid reverse grid-cols-[8rem_36rem_16rem] gap-4 h-3/4 max-w-7xl mx-auto flex justify-around', // reduced from 180px to 100px
+    inventoryGrid: 'grid-cols-5 gap-2 overflow-auto max-h-[60vh]',
+    quickSlotsGrid: 'grid-cols-2 gap-2 overflow-auto max-h-[60vh]',
+    groundItemsGrid: 'grid-cols-8 gap-3 grid-center ',
+    containerStyle: 'camo-pattern',  // Custom class for camo background
+    slotStyle: 'border-2 border-stone-700'  // Thick borders for military look
   },
-  widescreen: {
+  futuristic: {
     container: 'h-screen w-screen fixed inset-0 p-8 bg-black/95',
     gridLayout: 'grid grid-cols-[100px_1fr_200px] gap-10 h-[75vh] h-full max-w-[2000px] mx-auto', // reduced from 220px to 140px
-    inventoryGrid: 'grid-cols-8 gap-4',
-    quickSlotsGrid: 'grid-cols-2 gap-4',
-    groundItemsGrid: 'grid-cols-10 gap-4'
-  }
+    inventoryGrid: 'grid-cols-8 gap-4 overflow-auto max-h-[60vh]',
+    quickSlotsGrid: 'grid-cols-2 gap-4 overflow-auto max-h-[60vh]',
+    groundItemsGrid: 'grid-cols-10 gap-4',
+    containerStyle: 'hologram-effect',  // Custom class for holographic effect
+    slotStyle: 'hover:skew'  // Rounded corners and blur effect
+  },
+  medieval: {
+    container: 'h-screen w-screen fixed inset-0 p-12 bg-black/95',
+    gridLayout: 'grid grid-cols-[200px_500px_300px] gap-8 h-[70vh] max-w-[1600px]',
+    inventoryGrid: 'grid-cols-4 gap-6 overflow-auto max-h-[60vh]',
+    quickSlotsGrid: 'grid-cols-4 gap-4 overflow-auto max-h-[60vh]',
+    groundItemsGrid: 'grid-cols-6 gap-4'
+  },
 };
 
-
+const initialGroundItems = [
+  { id: 'g1', name: "Dropped Health Pack", icon: "🧰", quantity: 1 },
+  { id: 'g2', name: "Abandoned Ammo", icon: "🎯", quantity: 50 },
+  { id: 'g3', name: "Lost Key", icon: "🔑", quantity: 1 }
+];
 
 export default function AestheticInventory() {
+  const getInitialInventoryState = () => {
+    // Create an array of 20 null slots
+    const emptyInventory = Array(20).fill(null);
+    
+    // Fill the first slots with initial items
+    initialInventory.forEach((item, index) => {
+      emptyInventory[index] = {
+        ...item,
+        id: item.id.toString() // Convert id to string for consistency
+      };
+    });
+    
+    return emptyInventory;
+  };
+  
   const [showSettings, setShowSettings] = useState(false);
-  const [inventory, setInventory] = useState(initialInventory);
+  const [inventory, setInventory] = useState(getInitialInventoryState());
   const [quickSlots, setQuickSlots] = useState(Array(4).fill(null));
   const [showItemMenu, setShowItemMenu] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
@@ -89,131 +128,137 @@ export default function AestheticInventory() {
     return savedTheme ? JSON.parse(savedTheme) : defaultThemes.Default;
   });
   
-  // const [layout, setLayout] = useState(() => {
-  //   const savedLayout = localStorage.getItem('customLayout');
-  //   return savedLayout ? JSON.parse(savedLayout) : defaultLayout;
-  // });
   const [activeLayout, setActiveLayout] = useState('standard');
 
   const currentLayout = layoutPresets[activeLayout];
 
-  
-  const [settingsTab, setSettingsTab] = useState('theme');
+    // Add this to your initialState
+
+
+// Add this state to your component
+const [groundItems, setGroundItems] = useState(initialGroundItems);
+
 
   useEffect(() => {
     localStorage.setItem('inventory', JSON.stringify(inventory));
     localStorage.setItem('quickSlots', JSON.stringify(quickSlots));
   }, [inventory, quickSlots]);
 
-  const handleItemAction = (action, item, slotIndex = null) => {
-    switch (action) {
-      case 'use':
-        if (item.quantity > 1) {
-          const updatedInventory = inventory.map(inv => 
-            inv.id === item.id ? { ...inv, quantity: inv.quantity - 1 } : inv
-          );
-          setInventory(updatedInventory);
-          if (slotIndex !== null) {
-            const updatedQuickSlots = [...quickSlots];
-            updatedQuickSlots[slotIndex] = { ...item, quantity: item.quantity - 1 };
-            setQuickSlots(updatedQuickSlots);
-          }
-        } else {
-          if (slotIndex !== null) {
-            const updatedQuickSlots = [...quickSlots];
-            updatedQuickSlots[slotIndex] = null;
-            setQuickSlots(updatedQuickSlots);
-          }
-          setInventory(inventory.filter(inv => inv.id !== item.id));
-        }
-        break;
-      case 'give':
-        const amountToGive = Math.min(giveAmount, item.quantity);
-        if (amountToGive > 0) {
-          if (item.quantity > amountToGive) {
-            const updatedInventory = inventory.map(inv => 
-              inv.id === item.id ? { ...inv, quantity: inv.quantity - amountToGive } : inv
-            );
-            setInventory(updatedInventory);
-            
-            if (slotIndex !== null) {
-              const updatedQuickSlots = [...quickSlots];
-              updatedQuickSlots[slotIndex] = { ...item, quantity: item.quantity - amountToGive };
-              setQuickSlots(updatedQuickSlots);
-            }
-          } else {
-            if (slotIndex !== null) {
-              const updatedQuickSlots = [...quickSlots];
-              updatedQuickSlots[slotIndex] = null;
-              setQuickSlots(updatedQuickSlots);
-            }
-            setInventory(inventory.filter(inv => inv.id !== item.id));
-          }
-          // Here you would typically implement the actual giving functionality
-          console.log(`Gave ${amountToGive} ${item.name}(s) to player ${playerId}`);
-        }
-        break;
-      case 'returnToInventory':
-        if (slotIndex !== null) {
-          const itemToReturn = quickSlots[slotIndex];
-          if (itemToReturn) {
-            const existingItem = inventory.find(inv => inv.id === itemToReturn.id);
-            if (existingItem) {
-              setInventory(inventory.map(inv =>
-                inv.id === itemToReturn.id 
-                  ? { ...inv, quantity: inv.quantity + itemToReturn.quantity }
-                  : inv
-              ));
-            } else {
-              setInventory([...inventory, itemToReturn]);
-            }
-            const updatedQuickSlots = [...quickSlots];
-            updatedQuickSlots[slotIndex] = null;
-            setQuickSlots(updatedQuickSlots);
-          }
-        }
-        break;
-      default:
-        break;
-    }
-    setShowItemMenu(null);
-    setGiveAmount(1);
-    setPlayerId('');
-  };
 
-  const moveToQuickSlot = (draggedItem, targetSlotIndex) => {
-    setInventory(prevInventory => {
-      setQuickSlots(prevQuickSlots => {
-        const newQuickSlots = [...prevQuickSlots];
-        const currentSlotItem = newQuickSlots[targetSlotIndex];
-        
-        // Handle the item currently in the quickslot (if any)
-        if (currentSlotItem) {
-          const existingItemIndex = prevInventory.findIndex(item => item.id === currentSlotItem.id);
-          if (existingItemIndex !== -1) {
-            // Update existing item quantity
-            const updatedInventory = [...prevInventory];
-            updatedInventory[existingItemIndex] = {
-              ...updatedInventory[existingItemIndex],
-              quantity: updatedInventory[existingItemIndex].quantity + currentSlotItem.quantity
-            };
-            prevInventory = updatedInventory;
-          } else {
-            // Add item back to inventory
-            prevInventory = [...prevInventory, { ...currentSlotItem }];
-          }
+// Updated handler functions
+const moveToQuickSlot = (draggedItem, targetIndex) => {
+  const sourceType = draggedItem.sourceType;
+  const sourceIndex = draggedItem.sourceIndex;
+
+  setInventory(prevInventory => {
+    setQuickSlots(prevQuickSlots => {
+      const newQuickSlots = [...prevQuickSlots];
+      const targetItem = newQuickSlots[targetIndex];
+
+      // Handle swap
+      if (sourceType === 'quickslot') {
+        // Moving within quickslots
+        newQuickSlots[targetIndex] = draggedItem;
+        newQuickSlots[sourceIndex] = targetItem;
+      } else {
+        // Moving from inventory to quickslot
+        newQuickSlots[targetIndex] = draggedItem;
+        if (targetItem) {
+          return prevInventory.map((item, idx) => 
+            idx === sourceIndex ? targetItem : item
+          );
         }
-        
-        // Place dragged item in quickslot
-        newQuickSlots[targetSlotIndex] = { ...draggedItem };
-        
-        return newQuickSlots;
-      });
+      }
       
-      // Remove dragged item from inventory
-      return prevInventory.filter(item => item.id !== draggedItem.id);
+      return newQuickSlots;
     });
+
+    if (sourceType === 'inventory') {
+      return prevInventory.filter((_, idx) => idx !== sourceIndex);
+    }
+    return prevInventory;
+  });
+};
+// Updated handler functions
+// Update the drop handlers to handle ground items
+const handleInventoryDrop = (droppedItem, targetIndex) => {
+  if (!droppedItem) return;
+
+  if (droppedItem.sourceType === 'ground') {
+    // Handle pickup from ground
+    setGroundItems(prev => prev.filter(item => item.id !== droppedItem.id));
+    setInventory(prev => {
+      const newInventory = [...prev];
+      newInventory[targetIndex] = {
+        ...droppedItem,
+        sourceType: undefined,
+        sourceIndex: undefined
+      };
+      return newInventory;
+    });
+    return;
+  }
+
+  if (droppedItem.sourceType === 'inventory') {
+    // Moving within inventory
+    setInventory(prev => {
+      const newInventory = [...prev];
+      const sourceItem = { ...newInventory[droppedItem.sourceIndex] };
+      if (sourceItem) {
+        newInventory[droppedItem.sourceIndex] = newInventory[targetIndex];
+        newInventory[targetIndex] = sourceItem;
+      }
+      return newInventory;
+    });
+  } else if (droppedItem.sourceType === 'quickslot') {
+    // Moving from quickslot to inventory
+    setQuickSlots(prev => {
+      const newQuickSlots = [...prev];
+      newQuickSlots[droppedItem.sourceIndex] = null;
+      return newQuickSlots;
+    });
+    
+    setInventory(prev => {
+      const newInventory = [...prev];
+      newInventory[targetIndex] = {
+        ...droppedItem,
+        sourceType: undefined,
+        sourceIndex: undefined
+      };
+      return newInventory;
+    });
+  }
+};
+
+
+
+const handleDropToGround = (item) => {
+  if (!item) return;
+
+  const groundItem = {
+    id: item.id,
+    name: item.name,
+    icon: item.icon,
+    quantity: item.quantity
   };
+  
+  setGroundItems(prev => [...prev, groundItem]);
+
+  if (item.sourceType === 'inventory') {
+    setInventory(prev => {
+      const newInventory = [...prev];
+      newInventory[item.sourceIndex] = null;
+      return newInventory;
+    });
+  } else if (item.sourceType === 'quickslot') {
+    setQuickSlots(prev => {
+      const newQuickSlots = [...prev];
+      newQuickSlots[item.sourceIndex] = null;
+      return newQuickSlots;
+    });
+  }
+};
+
 
   const handleItemClick = (e, item, slotIndex = null) => {
     e.preventDefault();
@@ -225,34 +270,46 @@ export default function AestheticInventory() {
     setShowItemMenu({ item, slotIndex });
   };
 
-  // Add this to your initialState
-const initialGroundItems = [
-  { id: 'g1', name: "Dropped Health Pack", icon: "🧰", quantity: 1 },
-  { id: 'g2', name: "Abandoned Ammo", icon: "🎯", quantity: 50 },
-  { id: 'g3', name: "Lost Key", icon: "🔑", quantity: 1 }
-];
-
-// Add this state to your component
-const [groundItems, setGroundItems] = useState(initialGroundItems);
 
 // Add this function to handle picking up items
 const handlePickupItem = (item, index) => {
-  const existingItem = inventory.find(inv => inv.id === item.id);
-  if (existingItem) {
-    setInventory(inventory.map(inv =>
-      inv.id === item.id 
-        ? { ...inv, quantity: inv.quantity + item.quantity }
-        : inv
-    ));
+  if (!item) return; // Guard clause to prevent null items
+
+  // Find first empty slot in inventory
+  const emptySlotIndex = inventory.findIndex(slot => !slot);
+  
+  if (emptySlotIndex === -1) {
+    // No empty slots, try to stack with existing item
+    const existingItemIndex = inventory.findIndex(inv => inv && inv.id === item.id);
+    
+    if (existingItemIndex !== -1) {
+      setInventory(prev => prev.map((inv, idx) => 
+        idx === existingItemIndex && inv
+          ? { ...inv, quantity: inv.quantity + item.quantity }
+          : inv
+      ));
+    } else {
+      // Inventory is full
+      console.log('Inventory is full!');
+      return;
+    }
   } else {
-    setInventory([...inventory, item]);
+    // Place item in empty slot
+    setInventory(prev => {
+      const newInventory = [...prev];
+      newInventory[emptySlotIndex] = { ...item };
+      return newInventory;
+    });
   }
-  setGroundItems(groundItems.filter((_, i) => i !== index));
+
+  // Remove item from ground
+  setGroundItems(prev => prev.filter((_, i) => i !== index));
 };
+
 
   return (
     <DndProvider backend={HTML5Backend}>
-        <div className={currentLayout.container}>
+        <div className={`${currentLayout.container} ${currentLayout.containerStyle}`}>
         <div className={currentLayout.gridLayout}>
      {/* Character Equipment Panel */}
      <div className={`rounded-lg flex flex-col`}>
@@ -277,17 +334,28 @@ const handlePickupItem = (item, index) => {
           </h2>
           <div className="flex-1 p-4 overflow-y-auto">
             <div className={`grid ${currentLayout.inventoryGrid}`}>
-              {inventory.map((item, index) => (
-                <InventoryItem 
-                  key={index}
-                  item={item}
-                  theme={activeTheme}
-                  onClick={(e) => handleItemClick(e, item)}
-                />
-              ))}
-              {Array.from({ length: Math.max(0, 20 - inventory.length) }).map((_, index) => (
-                <EmptySlot key={`empty-${index}`} theme={activeTheme} />
-              ))}
+            {inventory.map((item, index) => (
+            item ? (
+              <InventoryItem 
+              key={`inv-${index}`}
+              item={item}
+              theme={activeTheme}
+              onClick={(e) => handleItemClick(e, item)}
+              onDrop={(droppedItem) => handleInventoryDrop(droppedItem, index)}
+              layout={currentLayout}
+              handleDropToGround={handleDropToGround}
+              index={index}
+            />
+            ) : (
+              <EmptySlot
+              key={`empty-inv-${index}`}
+              theme={activeTheme}
+              onDrop={(droppedItem) => handleInventoryDrop(droppedItem, index)}
+              index={index}
+              type="inventory"
+            />
+            )
+          ))}
             </div>
           </div>
         </div>
@@ -304,9 +372,11 @@ const handlePickupItem = (item, index) => {
                   key={index}
                   item={item}
                   theme={activeTheme}
+                  layout={currentLayout}
                   index={index}
                   onClick={(e) => item && handleItemClick(e, item, index)}
                   onDrop={(item) => moveToQuickSlot(item, index)}
+                  handleDropToGround={handleDropToGround}
                 />
               ))}
             </div>
@@ -318,18 +388,15 @@ const handlePickupItem = (item, index) => {
             
           <div className={`col-span-2 rounded-lg flex flex-col`}>
            
-            <div className="flex-1 p-2 overflow-x-auto">
+  
               <div className={`grid ${currentLayout.groundItemsGrid}`}>
-                {groundItems.map((item, index) => (
-                  <GroundItem
-                    key={index}
-                    item={item}
+                  <GroundItems
+                    items={groundItems}
                     theme={activeTheme}
-                    onPickup={() => handlePickupItem(item, index)}
+                    handlePickupItem={handlePickupItem}
                   />
-                ))}
               </div>
-            </div>
+        
           </div>
         
         </div>
@@ -356,167 +423,23 @@ const handlePickupItem = (item, index) => {
           />
         )}
         {/* Item Action Menu */}
-        {showItemMenu && (
-  <div 
-    className="fixed inset-0 bg-black/80 z-50"
-    onClick={() => setShowItemMenu(null)}
-  >
-    <div 
-      className={`${activeTheme.primary} rounded-lg p-4 w-64 absolute`}
-      onClick={e => e.stopPropagation()}
-      style={{
-        left: `${Math.min(menuPosition.x, window.innerWidth - 280)}px`,
-        top: `${Math.min(menuPosition.y, window.innerHeight - 300)}px`
-      }}
-    >
-      <button
-        onClick={() => handleItemAction('use', showItemMenu.item, showItemMenu.slotIndex)}
-        className={`w-full p-2 mb-2 ${activeTheme.secondary} ${activeTheme.hover} rounded flex items-center gap-2 hover:bg-gray-700/40`}
-      >
-        <Trash2 className="w-4 h-4" /> Use Item
-      </button>
-      
-      <div className="space-y-2 mb-2">
-        <input
-          type="text"
-          placeholder="Player ID"
-          value={playerId}
-          onChange={(e) => setPlayerId(e.target.value)}
-          className="w-full p-2 rounded bg-gray-800/50 text-white border border-gray-700 focus:outline-none focus:border-gray-500"
-        />
-        <input
-          type="number"
-          min="1"
-          max={showItemMenu.item.quantity}
-          value={giveAmount}
-          onChange={(e) => setGiveAmount(parseInt(e.target.value) || 1)}
-          className="w-full p-2 rounded bg-gray-800/50 text-white border border-gray-700 focus:outline-none focus:border-gray-500"
-        />
-        <button
-          onClick={() => handleItemAction('give', showItemMenu.item, showItemMenu.slotIndex)}
-          className={`w-full p-2 ${activeTheme.secondary} ${activeTheme.hover} rounded flex items-center justify-center gap-2 hover:bg-gray-700/40`}
-        >
-          <User className="w-4 h-4" /> Give Item
-        </button>
-      </div>
+            {showItemMenu && (
+              <ItemMenu
+                showItemMenu={showItemMenu}
+                setShowItemMenu={setShowItemMenu}
+                activeTheme={activeTheme}
+                inventory={inventory}
+                setInventory={setInventory}
+                quickSlots={quickSlots}
+                setQuickSlots={setQuickSlots}
+                menuPosition={menuPosition}
+              />
+            )}
 
-      {showItemMenu.slotIndex !== null && (
-        <button
-          onClick={() => handleItemAction('returnToInventory', showItemMenu.item, showItemMenu.slotIndex)}
-          className={`w-full p-2 ${activeTheme.secondary} rounded flex items-center gap-2 hover:bg-gray-700/40`}
-        >
-          <ArrowLeft className="w-4 h-4" /> Return to Inventory
-        </button>
-      )}
-    </div>
-  </div>
-)}
          </div>
     </DndProvider>
   );
 }
-const InventoryItem = ({ item, theme, onClick }) => {
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: ItemTypes.INVENTORY_ITEM,
-    item: () => ({ ...item }),
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging()
-    })
-  }), [item]);
-
-  return (
-    <div
-      ref={drag}
-      className={`${theme.secondary} aspect-square rounded ${theme.hover}
-        p-2 flex flex-col items-center justify-center cursor-move transition-all duration-200
-        ${isDragging ? 'opacity-50' : ''}`}
-      onClick={onClick}
-    >
-      <span className="text-xl mb-0.5">{item.icon}</span>
-      <span className="text-xs text-center truncate w-full">{item.name}</span>
-      <span className="text-xs text-gray-400">x{item.quantity}</span>
-    </div>
-  );
-};
-
-// Updated quick slot component
-const QuickSlot = ({ item, theme, index, onClick, onDrop }) => {
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: ItemTypes.INVENTORY_ITEM,
-    drop: (droppedItem) => {
-      onDrop(droppedItem);
-      return { dropped: true };
-    },
-    collect: (monitor) => ({
-      isOver: !!monitor.isOver()
-    })
-  }), [onDrop]);
-
-  return (
-    <div
-      ref={drop}
-      className={`${theme.secondary} ${theme.hover} aspect-square rounded
-        p-2 flex flex-col items-center justify-center relative transition-all duration-200
-        ${isOver ? 'border-2 border-white' : ''}`}
-      onClick={onClick}
-    >
-      <div className="absolute top-1 left-1 text-xs bg-black/50 px-1.5 py-0.5 rounded">
-        {index + 1}
-      </div>
-      {item ? (
-        <>
-          <span className="text-xl mb-0.5">{item.icon}</span>
-          <span className="text-xs text-center truncate w-full">{item.name}</span>
-          <span className="text-xs text-gray-400">x{item.quantity}</span>
-        </>
-      ) : (
-        <span className="text-gray-500 text-xs">Empty</span>
-      )}
-    </div>
-  );
-};
-
-// More compact equipment slot
-const EquipmentSlot = ({ theme, image, label }) => (
-  <div className="flex items-center gap-2 p-1">
-    <div className={`
-      ${theme.secondary} 
-      ${theme.hover} 
-      w-12 
-      h-12 
-      rounded  
-      flex 
-      items-center 
-      justify-center 
-      transition-colors 
-      duration-200
-    `}>
-      <img 
-        src={image} 
-        alt={label} 
-        className="w-10 h-10 object-contain" 
-      />
-    </div>
-  </div>
-);
-
-// More compact ground item
-const GroundItem = ({ item, theme, onPickup }) => (
-  <div
-    className={`${theme.secondary} ${theme.hover} aspect-square rounded
-      p-1 flex flex-col items-center justify-center cursor-pointer transition-all duration-200`}
-    onClick={onPickup}
-  >
-    <span className="text-lg mb-0.5">{item.icon}</span>
-    <span className="text-xs text-center truncate w-full">{item.name}</span>
-    <span className="text-xs text-gray-400">x{item.quantity}</span>
-  </div>
-);
 
 
-const EmptySlot = ({ theme }) => (
-  <div className={`${theme.secondary} ${theme.hover} aspect-square rounded-lg
-    flex items-center justify-center transition-colors duration-200`}>
-    <span className="text-gray-500 text-sm">Empty</span>
-  </div>
-);
+

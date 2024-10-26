@@ -36,6 +36,13 @@ const defaultThemes = {
     accent: 'border-purple-700 bg-purple-700/10 shadow-md shadow-purple-500/50 rounded-md',
     text: 'text-purple-100',
     hover: 'hover:border-purple-200/40 hover:shadow-md hover:shadow-purple-500/50'
+  },
+  Pink: {
+    primary: 'bg-zinc-900',
+    secondary: 'bg-zinc-800',
+    accent: 'border-pink-700 bg-pink-700/10 shadow-md shadow-pink-500/50 rounded-md',
+    text: 'text-purple-100',
+    hover: 'hover:border-pink-200/40 hover:shadow-md hover:shadow-pink-500/50'
   }
 };
 

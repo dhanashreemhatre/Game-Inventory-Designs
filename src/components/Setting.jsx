@@ -26,13 +26,19 @@ const defaultLayouts = {
     inventory: { gridColumn: '3', gridRow: '1' },
     groundItems: { gridColumn: '1 / span 3', gridRow: '2' }
   },
-  compact: {
+  cyberpunk: {
     character: { gridColumn: '1', gridRow: '1' },
     quickSlots: { gridColumn: '2', gridRow: '1' },
     inventory: { gridColumn: '1 / span 2', gridRow: '2' },
     groundItems: { gridColumn: '1 / span 2', gridRow: '3' }
   },
-  widescreen: {
+  futuristic: {
+    character: { gridColumn: '1', gridRow: '1' },
+    quickSlots: { gridColumn: '1', gridRow: '2' },
+    inventory: { gridColumn: '2 / span 2', gridRow: '1' },
+    groundItems: { gridColumn: '2 / span 2', gridRow: '2' }
+  },
+  medieval: {
     character: { gridColumn: '1', gridRow: '1' },
     quickSlots: { gridColumn: '1', gridRow: '2' },
     inventory: { gridColumn: '2 / span 2', gridRow: '1' },
@@ -172,9 +178,9 @@ const EnhancedSettingsModal = ({ show, onClose, theme, onThemeChange, layout, on
           </div>
           <button 
             onClick={onClose}
-            className="hover:bg-gray-800 p-2 rounded-full transition-colors"
+            className="hover:bg-white p-2 rounded-full transition-colors"
           >
-            <X className="w-6 h-6" />
+            <X className="w-6 h-6 text-white hover:text-black" />
           </button>
         </div>
 
