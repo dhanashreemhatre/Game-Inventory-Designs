@@ -31,9 +31,9 @@ const defaultThemes = {
   Default: {
     primary: 'bg-gray-900',
     secondary: 'bg-gray-800',
-    accent: 'border-gray-700',
+    accent: 'border-emerald-700 bg-emerald-700/10 shadow-md shadow-emerald-500/50 rounded-md',
     text: 'text-gray-100',
-    hover: 'hover:bg-emerald-200/40'
+    hover: 'hover:border-emerald-200/40 hover:shadow-md hover:shadow-emerald-500/50'
   }
 };
 
@@ -52,22 +52,22 @@ const initialInventory = [
 const layoutPresets = {
   standard: {
     container: 'h-screen w-screen fixed inset-0 p-8 bg-black/95',
-    gridLayout: 'grid grid-cols-[100px_550px_250px] grid-rows-[1fr_120px] gap-10 h-full max-w-[1800px] flex justify-between', // reduced from 200px to 120px
+    gridLayout: 'grid grid-cols-[100px_600px_250px] gap-4 h-[75vh] max-w-[1800px] flex justify-around', // reduced from 200px to 120px
     inventoryGrid: 'grid-cols-5 gap-3',
     quickSlotsGrid: 'grid-cols-2 gap-3',
     groundItemsGrid: 'grid-cols-8 gap-3'
   },
   compact: {
     container: 'h-screen w-screen fixed inset-0 p-4 bg-black/95',
-    gridLayout: 'grid grid-cols-[250px_460px_200px] grid-rows-[1fr_100px] gap-4 h-full max-w-[1600px] flex justify-between', // reduced from 180px to 100px
+    gridLayout: 'grid grid-cols-[100px_560px_200px] gap-4 h-[75vh] max-w-[1600px] flex justify-around', // reduced from 180px to 100px
     inventoryGrid: 'grid-cols-5 gap-2',
     quickSlotsGrid: 'grid-cols-2 gap-2',
-    groundItemsGrid: 'grid-cols-6 gap-2 h-[80px]'
+    groundItemsGrid: 'grid-cols-8 gap-3'
   },
   widescreen: {
-    container: 'h-screen w-screen fixed inset-0 p-10 bg-black/95',
-    gridLayout: 'grid grid-cols-[320px_1fr_320px] grid-rows-[1fr_140px] gap-8 h-full max-w-[2000px] mx-auto', // reduced from 220px to 140px
-    inventoryGrid: 'grid-cols-10 gap-4',
+    container: 'h-screen w-screen fixed inset-0 p-8 bg-black/95',
+    gridLayout: 'grid grid-cols-[100px_1fr_200px] gap-10 h-[75vh] h-full max-w-[2000px] mx-auto', // reduced from 220px to 140px
+    inventoryGrid: 'grid-cols-8 gap-4',
     quickSlotsGrid: 'grid-cols-2 gap-4',
     groundItemsGrid: 'grid-cols-10 gap-4'
   }
@@ -256,10 +256,10 @@ const handlePickupItem = (item, index) => {
         <div className={currentLayout.gridLayout}>
      {/* Character Equipment Panel */}
      <div className={`rounded-lg flex flex-col`}>
-          <h2 className={`${activeTheme.text} text-md font-bold p-4 flex justify-center items-center gap-2 ${activeTheme.accent}`}>
-            <User className="w-5 h-5" />
+          <h2 className={`${activeTheme.text} text-md font-bold p-4 flex justify-center items-center gap-2`}>
+            <div className={`border p-2 ${activeTheme.accent}`}><User className="w-5 h-5" /></div> User
           </h2>
-          <div className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <div className="flex-1 p-4 space-y-2 overflow-y-auto">
             {['Hat', 'Watch', 'Armor', 'Shirt', 'Weapon', 'Pants', 'Shoes'].map((slot) => (
               <EquipmentSlot
                 key={slot}
@@ -271,9 +271,9 @@ const handlePickupItem = (item, index) => {
           </div>
         </div>
          {/* Main Inventory */}
-         <div className={`rounded-lg ${activeTheme.accent} flex flex-col`}>
-          <h2 className={`${activeTheme.text} text-lg font-bold p-4 flex items-center gap-2  ${activeTheme.accent}`}>
-            <Package className="w-5 h-5" /> Inventory
+         <div className={`rounded-lg flex flex-col`}>
+          <h2 className={`${activeTheme.text} text-lg font-bold p-4 flex items-center gap-2`}>
+          <div className={`border p-2 ${activeTheme.accent}`}> <Package className="w-5 h-5" /> </div>Inventory
           </h2>
           <div className="flex-1 p-4 overflow-y-auto">
             <div className={`grid ${currentLayout.inventoryGrid}`}>
@@ -293,9 +293,9 @@ const handlePickupItem = (item, index) => {
         </div>
 
           {/* Quick Slots Panel */}
-        <div className={`rounded-lg ${activeTheme.accent} flex flex-col`}>
-          <h2 className={`${activeTheme.text} text-lg font-bold p-4 flex items-center gap-2 ${activeTheme.accent}`}>
-            <Zap className="w-5 h-5" /> Quick Access
+        <div className={`rounded-lg flex flex-col`}>
+          <h2 className={`${activeTheme.text} text-lg font-bold p-4 flex items-center gap-2`}>
+          <div className={`border p-2 ${activeTheme.accent}`}> <Zap className="w-5 h-5" /></div> Quick Access
           </h2>
           <div className="flex-1 p-4">
             <div className={`grid ${currentLayout.quickSlotsGrid}`}>
@@ -316,7 +316,7 @@ const handlePickupItem = (item, index) => {
 
             {/* Ground Items Panel - Updated to be more compact */}
             
-          <div className={`col-span-2 rounded-lg ${activeTheme.accent} flex flex-col`}>
+          <div className={`col-span-2 rounded-lg flex flex-col`}>
            
             <div className="flex-1 p-2 overflow-x-auto">
               <div className={`grid ${currentLayout.groundItemsGrid}`}>
@@ -371,7 +371,7 @@ const handlePickupItem = (item, index) => {
     >
       <button
         onClick={() => handleItemAction('use', showItemMenu.item, showItemMenu.slotIndex)}
-        className={`w-full p-2 mb-2 ${activeTheme.secondary} rounded flex items-center gap-2 hover:bg-gray-700/40`}
+        className={`w-full p-2 mb-2 ${activeTheme.secondary} ${activeTheme.hover} rounded flex items-center gap-2 hover:bg-gray-700/40`}
       >
         <Trash2 className="w-4 h-4" /> Use Item
       </button>
@@ -394,7 +394,7 @@ const handlePickupItem = (item, index) => {
         />
         <button
           onClick={() => handleItemAction('give', showItemMenu.item, showItemMenu.slotIndex)}
-          className={`w-full p-2 ${activeTheme.secondary} rounded flex items-center justify-center gap-2 hover:bg-gray-700/40`}
+          className={`w-full p-2 ${activeTheme.secondary} ${activeTheme.hover} rounded flex items-center justify-center gap-2 hover:bg-gray-700/40`}
         >
           <User className="w-4 h-4" /> Give Item
         </button>
@@ -427,7 +427,7 @@ const InventoryItem = ({ item, theme, onClick }) => {
   return (
     <div
       ref={drag}
-      className={`${theme.secondary} ${theme.hover} aspect-square rounded border ${theme.accent}
+      className={`${theme.secondary} aspect-square rounded border ${theme.hover}
         p-2 flex flex-col items-center justify-center cursor-move transition-all duration-200
         ${isDragging ? 'opacity-50' : ''}`}
       onClick={onClick}
@@ -455,7 +455,7 @@ const QuickSlot = ({ item, theme, index, onClick, onDrop }) => {
   return (
     <div
       ref={drop}
-      className={`${theme.secondary} ${theme.hover} aspect-square rounded border ${theme.accent}
+      className={`${theme.secondary} ${theme.hover} aspect-square rounded border
         p-2 flex flex-col items-center justify-center relative transition-all duration-200
         ${isOver ? 'border-2 border-white' : ''}`}
       onClick={onClick}
@@ -482,11 +482,10 @@ const EquipmentSlot = ({ theme, image, label }) => (
     <div className={`
       ${theme.secondary} 
       ${theme.hover} 
-      w-10 
-      h-10 
+      w-12 
+      h-12 
       rounded 
       border 
-      ${theme.accent}
       flex 
       items-center 
       justify-center 
@@ -496,7 +495,7 @@ const EquipmentSlot = ({ theme, image, label }) => (
       <img 
         src={image} 
         alt={label} 
-        className="w-8 h-8 object-contain" 
+        className="w-10 h-10 object-contain" 
       />
     </div>
   </div>
@@ -505,7 +504,7 @@ const EquipmentSlot = ({ theme, image, label }) => (
 // More compact ground item
 const GroundItem = ({ item, theme, onPickup }) => (
   <div
-    className={`${theme.secondary} ${theme.hover} aspect-square rounded border ${theme.accent}
+    className={`${theme.secondary} ${theme.hover} aspect-square rounded border
       p-1 flex flex-col items-center justify-center cursor-pointer transition-all duration-200`}
     onClick={onPickup}
   >
@@ -517,7 +516,7 @@ const GroundItem = ({ item, theme, onPickup }) => (
 
 
 const EmptySlot = ({ theme }) => (
-  <div className={`${theme.secondary} ${theme.hover} aspect-square rounded-lg border ${theme.accent}
+  <div className={`${theme.secondary} ${theme.hover} aspect-square rounded-lg border
     flex items-center justify-center transition-colors duration-200`}>
     <span className="text-gray-500 text-sm">Empty</span>
   </div>
