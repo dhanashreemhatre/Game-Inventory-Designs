@@ -427,7 +427,7 @@ const InventoryItem = ({ item, theme, onClick }) => {
   return (
     <div
       ref={drag}
-      className={`${theme.secondary} aspect-square rounded border ${theme.hover}
+      className={`${theme.secondary} aspect-square rounded ${theme.hover}
         p-2 flex flex-col items-center justify-center cursor-move transition-all duration-200
         ${isDragging ? 'opacity-50' : ''}`}
       onClick={onClick}
@@ -455,7 +455,7 @@ const QuickSlot = ({ item, theme, index, onClick, onDrop }) => {
   return (
     <div
       ref={drop}
-      className={`${theme.secondary} ${theme.hover} aspect-square rounded border
+      className={`${theme.secondary} ${theme.hover} aspect-square rounded
         p-2 flex flex-col items-center justify-center relative transition-all duration-200
         ${isOver ? 'border-2 border-white' : ''}`}
       onClick={onClick}
@@ -484,8 +484,7 @@ const EquipmentSlot = ({ theme, image, label }) => (
       ${theme.hover} 
       w-12 
       h-12 
-      rounded 
-      border 
+      rounded  
       flex 
       items-center 
       justify-center 
@@ -504,7 +503,7 @@ const EquipmentSlot = ({ theme, image, label }) => (
 // More compact ground item
 const GroundItem = ({ item, theme, onPickup }) => (
   <div
-    className={`${theme.secondary} ${theme.hover} aspect-square rounded border
+    className={`${theme.secondary} ${theme.hover} aspect-square rounded
       p-1 flex flex-col items-center justify-center cursor-pointer transition-all duration-200`}
     onClick={onPickup}
   >
@@ -516,7 +515,7 @@ const GroundItem = ({ item, theme, onPickup }) => (
 
 
 const EmptySlot = ({ theme }) => (
-  <div className={`${theme.secondary} ${theme.hover} aspect-square rounded-lg border
+  <div className={`${theme.secondary} ${theme.hover} aspect-square rounded-lg
     flex items-center justify-center transition-colors duration-200`}>
     <span className="text-gray-500 text-sm">Empty</span>
   </div>
