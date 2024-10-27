@@ -63,7 +63,7 @@ const layoutPresets = {
     gridLayout: 'grid grid-cols-[100px_600px_250px] g-2 md:gap-4 h-[60vh] flex justify-around', // reduced from 200px to 120px
     inventoryGrid: 'grid-cols-5 gap-3 overflow-auto max-h-[60vh]',
     quickSlotsGrid: 'grid-cols-2 gap-3 overflow-auto max-h-[60vh]',
-    groundItemsGrid: 'col-start-3 col-span-2 grid grid-cols-8 gap-3',
+    groundItemsGrid: 'col-start-3 col-span-2 grid grid-cols-6 gap-3',
     
   },
   cyberpunk: {
@@ -71,7 +71,7 @@ const layoutPresets = {
     gridLayout: 'grid reverse grid-cols-[8rem_36rem_16rem] gap-4 h-3/4 max-w-7xl mx-auto flex justify-around', // reduced from 180px to 100px
     inventoryGrid: 'grid-cols-5 gap-2 overflow-auto max-h-[60vh]',
     quickSlotsGrid: 'grid-cols-2 gap-2 overflow-auto max-h-[60vh]',
-    groundItemsGrid: 'grid-cols-8 gap-3 grid-center ',
+    groundItemsGrid: 'grid-cols-6 gap-3 grid-center ',
     containerStyle: 'camo-pattern',  // Custom class for camo background
     slotStyle: 'border-2 border-stone-700'  // Thick borders for military look
   },
@@ -80,15 +80,15 @@ const layoutPresets = {
     gridLayout: 'grid grid-cols-[100px_1fr_200px] gap-10 h-[75vh] h-full max-w-[2000px] mx-auto', // reduced from 220px to 140px
     inventoryGrid: 'grid-cols-8 gap-4 overflow-auto max-h-[60vh]',
     quickSlotsGrid: 'grid-cols-2 gap-4 overflow-auto max-h-[60vh]',
-    groundItemsGrid: 'grid-cols-10 gap-4',
+    groundItemsGrid: 'grid-cols-9 gap-4 md:mt-10',
     containerStyle: 'hologram-effect',  // Custom class for holographic effect
     slotStyle: 'hover:skew'  // Rounded corners and blur effect
   },
   medieval: {
     container: 'h-screen w-screen fixed inset-0 p-12 bg-black/95',
-    gridLayout: 'grid grid-cols-[200px_500px_300px] gap-8 h-[70vh] max-w-[1600px]',
-    inventoryGrid: 'grid-cols-4 gap-6 overflow-auto max-h-[60vh]',
-    quickSlotsGrid: 'grid-cols-4 gap-4 overflow-auto max-h-[60vh]',
+    gridLayout: 'grid grid-cols-[200px_600px_180px] mx-auto gap-8 h-[70vh] max-w-[1600px] flex justify-around',
+    inventoryGrid: 'grid-cols-5 gap-6 overflow-auto max-h-[60vh]',
+    quickSlotsGrid: 'grid-cols-2 gap-4 overflow-auto max-h-[60vh]',
     groundItemsGrid: 'grid-cols-6 gap-4'
   },
 };
@@ -120,8 +120,6 @@ export default function AestheticInventory() {
   const [quickSlots, setQuickSlots] = useState(Array(4).fill(null));
   const [showItemMenu, setShowItemMenu] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
-  const [giveAmount, setGiveAmount] = useState(1);
-  const [playerId, setPlayerId] = useState('');
 
   const [activeTheme, setActiveTheme] = useState(() => {
     const savedTheme = localStorage.getItem('customTheme');
@@ -179,58 +177,73 @@ const moveToQuickSlot = (draggedItem, targetIndex) => {
     return prevInventory;
   });
 };
-// Updated handler functions
-// Update the drop handlers to handle ground items
+
+
 const handleInventoryDrop = (droppedItem, targetIndex) => {
   if (!droppedItem) return;
 
-  if (droppedItem.sourceType === 'ground') {
-    // Handle pickup from ground
-    setGroundItems(prev => prev.filter(item => item.id !== droppedItem.id));
-    setInventory(prev => {
-      const newInventory = [...prev];
-      newInventory[targetIndex] = {
-        ...droppedItem,
-        sourceType: undefined,
-        sourceIndex: undefined
-      };
-      return newInventory;
-    });
-    return;
-  }
+  // Get target slot item
+  const targetItem = inventory[targetIndex];
 
+  // Only handle inventory and quickslot sources
   if (droppedItem.sourceType === 'inventory') {
     // Moving within inventory
     setInventory(prev => {
       const newInventory = [...prev];
       const sourceItem = { ...newInventory[droppedItem.sourceIndex] };
-      if (sourceItem) {
-        newInventory[droppedItem.sourceIndex] = newInventory[targetIndex];
+      
+      // If target has matching item, stack
+      if (targetItem && targetItem.id === sourceItem.id) {
+        newInventory[targetIndex] = {
+          ...targetItem,
+          quantity: targetItem.quantity + sourceItem.quantity
+        };
+        newInventory[droppedItem.sourceIndex] = null;
+      } else {
+        // Swap items
+        newInventory[droppedItem.sourceIndex] = targetItem;
         newInventory[targetIndex] = sourceItem;
       }
       return newInventory;
     });
   } else if (droppedItem.sourceType === 'quickslot') {
     // Moving from quickslot to inventory
+    if (targetItem && targetItem.id === droppedItem.id) {
+      // Stack with existing item
+      setInventory(prev => {
+        const newInventory = [...prev];
+        newInventory[targetIndex] = {
+          ...targetItem,
+          quantity: targetItem.quantity + droppedItem.quantity
+        };
+        return newInventory;
+      });
+    } else {
+      // Swap items
+      setInventory(prev => {
+        const newInventory = [...prev];
+        newInventory[targetIndex] = {
+          ...droppedItem,
+          sourceType: undefined,
+          sourceIndex: undefined
+        };
+        return newInventory;
+      });
+    }
+    
     setQuickSlots(prev => {
       const newQuickSlots = [...prev];
-      newQuickSlots[droppedItem.sourceIndex] = null;
+      newQuickSlots[droppedItem.sourceIndex] = targetItem;
       return newQuickSlots;
-    });
-    
-    setInventory(prev => {
-      const newInventory = [...prev];
-      newInventory[targetIndex] = {
-        ...droppedItem,
-        sourceType: undefined,
-        sourceIndex: undefined
-      };
-      return newInventory;
     });
   }
 };
 
 
+// Helper function to check if items can stack
+const canItemsStack = (item1, item2) => {
+  return item1 && item2 && item1.id === item2.id;
+};
 
 const handleDropToGround = (item) => {
   if (!item) return;
@@ -244,6 +257,7 @@ const handleDropToGround = (item) => {
   
   setGroundItems(prev => [...prev, groundItem]);
 
+  // Clear item from source
   if (item.sourceType === 'inventory') {
     setInventory(prev => {
       const newInventory = [...prev];
@@ -259,7 +273,6 @@ const handleDropToGround = (item) => {
   }
 };
 
-
   const handleItemClick = (e, item, slotIndex = null) => {
     e.preventDefault();
     const rect = e.currentTarget.getBoundingClientRect();
@@ -270,41 +283,88 @@ const handleDropToGround = (item) => {
     setShowItemMenu({ item, slotIndex });
   };
 
-
-// Add this function to handle picking up items
-const handlePickupItem = (item, index) => {
-  if (!item) return; // Guard clause to prevent null items
-
-  // Find first empty slot in inventory
-  const emptySlotIndex = inventory.findIndex(slot => !slot);
+  const handleQuickSlotDrop = (droppedItem, targetIndex) => {
+    if (!droppedItem) return;
   
-  if (emptySlotIndex === -1) {
-    // No empty slots, try to stack with existing item
+    if (droppedItem.sourceType === 'quickslot') {
+      // Moving within quickslots
+      setQuickSlots(prev => {
+        const newQuickSlots = [...prev];
+        const sourceItem = { ...newQuickSlots[droppedItem.sourceIndex] };
+        if (sourceItem) {
+          newQuickSlots[droppedItem.sourceIndex] = newQuickSlots[targetIndex];
+          newQuickSlots[targetIndex] = sourceItem;
+        }
+        return newQuickSlots;
+      });
+    } else if (droppedItem.sourceType === 'inventory') {
+      // Moving from inventory to quickslot
+      setInventory(prev => {
+        const newInventory = [...prev];
+        newInventory[droppedItem.sourceIndex] = null;
+        return newInventory;
+      });
+      
+      setQuickSlots(prev => {
+        const newQuickSlots = [...prev];
+        const currentItem = newQuickSlots[targetIndex];
+        newQuickSlots[targetIndex] = { ...droppedItem, sourceType: undefined, sourceIndex: undefined };
+        
+        // If there was an item in the target quickslot, move it to inventory
+        if (currentItem) {
+          setInventory(prev => {
+            const newInventory = [...prev];
+            const emptySlot = newInventory.findIndex(slot => slot === null);
+            if (emptySlot !== -1) {
+              newInventory[emptySlot] = currentItem;
+            }
+            return newInventory;
+          });
+        }
+        
+        return newQuickSlots;
+      });
+    }
+  };
+
+
+  const handlePickupItem = (item, index) => {
+    if (!item) return;
+  
+    // First try to find matching item to stack with
     const existingItemIndex = inventory.findIndex(inv => inv && inv.id === item.id);
     
     if (existingItemIndex !== -1) {
+      // Stack with existing item
       setInventory(prev => prev.map((inv, idx) => 
         idx === existingItemIndex && inv
           ? { ...inv, quantity: inv.quantity + item.quantity }
           : inv
       ));
+      
+      // Remove from ground after successful stack
+      setGroundItems(prev => prev.filter((_, i) => i !== index));
+      return;
+    }
+  
+    // If can't stack, find empty slot
+    const emptySlotIndex = inventory.findIndex(slot => !slot);
+    
+    if (emptySlotIndex !== -1) {
+      // Place in empty slot
+      setInventory(prev => {
+        const newInventory = [...prev];
+        newInventory[emptySlotIndex] = { ...item };
+        return newInventory;
+      });
+      
+      // Remove from ground after successful placement
+      setGroundItems(prev => prev.filter((_, i) => i !== index));
     } else {
-      // Inventory is full
       console.log('Inventory is full!');
       return;
     }
-  } else {
-    // Place item in empty slot
-    setInventory(prev => {
-      const newInventory = [...prev];
-      newInventory[emptySlotIndex] = { ...item };
-      return newInventory;
-    });
-  }
-
-  // Remove item from ground
-  setGroundItems(prev => prev.filter((_, i) => i !== index));
-};
+  };
 
 
   return (
@@ -327,7 +387,8 @@ const handlePickupItem = (item, index) => {
             ))}
           </div>
         </div>
-         {/* Main Inventory */}
+         <div className={`rounded-lg flex flex-col gap-6`}>
+          {/* Main Inventory */}
          <div className={`rounded-lg flex flex-col`}>
           <h2 className={`${activeTheme.text} text-lg font-bold p-4 flex items-center gap-2`}>
           <div className={`border p-2 ${activeTheme.accent}`}> <Package className="w-5 h-5" /> </div>Inventory
@@ -359,8 +420,23 @@ const handlePickupItem = (item, index) => {
             </div>
           </div>
         </div>
-
-          {/* Quick Slots Panel */}
+          {/* Ground Items Panel - Updated to be more compact */}
+            
+          <div className={`col-span-2 rounded-lg flex flex-col`}>
+           
+  
+              <div className={`grid ${currentLayout.groundItemsGrid}`}>
+                  <GroundItems
+                    items={groundItems}
+                    theme={activeTheme}
+                    handlePickupItem={handlePickupItem}
+                  />
+              </div>
+        
+          </div>
+       
+         </div>
+            {/* Quick Slots Panel */}
         <div className={`rounded-lg flex flex-col`}>
           <h2 className={`${activeTheme.text} text-lg font-bold p-4 flex items-center gap-2`}>
           <div className={`border p-2 ${activeTheme.accent}`}> <Zap className="w-5 h-5" /></div> Quick Access
@@ -375,7 +451,7 @@ const handlePickupItem = (item, index) => {
                   layout={currentLayout}
                   index={index}
                   onClick={(e) => item && handleItemClick(e, item, index)}
-                  onDrop={(item) => moveToQuickSlot(item, index)}
+                  onDrop={(droppedItem) => handleQuickSlotDrop(droppedItem, index)}
                   handleDropToGround={handleDropToGround}
                 />
               ))}
@@ -383,21 +459,7 @@ const handlePickupItem = (item, index) => {
           </div>
         </div>
 
-
-            {/* Ground Items Panel - Updated to be more compact */}
             
-          <div className={`col-span-2 rounded-lg flex flex-col`}>
-           
-  
-              <div className={`grid ${currentLayout.groundItemsGrid}`}>
-                  <GroundItems
-                    items={groundItems}
-                    theme={activeTheme}
-                    handlePickupItem={handlePickupItem}
-                  />
-              </div>
-        
-          </div>
         
         </div>
 
