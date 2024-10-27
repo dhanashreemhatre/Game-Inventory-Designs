@@ -41,9 +41,51 @@ const defaultThemes = {
     primary: 'bg-zinc-900',
     secondary: 'bg-zinc-800',
     accent: 'border-pink-700 bg-pink-700/10 shadow-md shadow-pink-500/50 rounded-md',
-    text: 'text-purple-100',
+    text: 'text-pink-100',
     hover: 'hover:border-pink-200/40 hover:shadow-md hover:shadow-pink-500/50'
-  }
+  },
+  RoseGold: {
+    primary: 'bg-zinc-900',
+    secondary: 'bg-zinc-800',
+    accent: 'border-rose-700 bg-rose-700/10 shadow-md shadow-rose-500/50 rounded-md',
+    text: 'text-rose-100',
+    hover: 'hover:border-rose-200/40 hover:shadow-md hover:shadow-rose-500/50'
+  },
+  Teal: {
+    primary: 'bg-zinc-900',
+    secondary: 'bg-zinc-800',
+    accent: 'border-teal-700 bg-teal-700/10 shadow-md shadow-teal-500/50 rounded-md',
+    text: 'text-teal-100',
+    hover: 'hover:border-teal-200/40 hover:shadow-md hover:shadow-teal-500/50'
+  },
+  Cyan: {
+    primary: 'bg-zinc-900',
+    secondary: 'bg-zinc-800',
+    accent: 'border-cyan-700 bg-cyan-700/10 shadow-md shadow-cyan-500/50 rounded-md',
+    text: 'text-cyan-100',
+    hover: 'hover:border-cyan-200/40 hover:shadow-md hover:shadow-cyan-500/50'
+  },
+  Lime: {
+    primary: 'bg-zinc-900',
+    secondary: 'bg-zinc-800',
+    accent: 'border-lime-700 bg-lime-700/10 shadow-md shadow-lime-500/50 rounded-md',
+    text: 'text-lime-100',
+    hover: 'hover:border-lime-200/40 hover:shadow-md hover:shadow-lime-500/50'
+  },
+  Fuchsia: {
+    primary: 'bg-zinc-900',
+    secondary: 'bg-zinc-800',
+    accent: 'border-fuchsia-700 bg-fuchsia-700/10 shadow-md shadow-fuchsia-500/50 rounded-md',
+    text: 'text-lime-100',
+    hover: 'hover:border-fuchsia-200/40 hover:shadow-md hover:shadow-fuchsia-500/50'
+  },
+  Amber: {
+    primary: 'bg-zinc-900',
+    secondary: 'bg-zinc-800',
+    accent: 'border-amber-700 bg-amber-700/10 shadow-md shadow-amber-500/50 rounded-md',
+    text: 'text-lime-100',
+    hover: 'hover:border-amber-200/40 hover:shadow-md hover:shadow-amber-500/50'
+  },
 };
 
 const ThemePreview = ({ theme, name, isActive, onClick }) => (
