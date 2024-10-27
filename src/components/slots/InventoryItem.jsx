@@ -14,8 +14,10 @@ const InventoryItem = ({ item, theme, onClick, onDrop, layout, handleDropToGroun
       type: ItemTypes.INVENTORY_ITEM,
       item: () => ({ 
         ...item, 
+        sourceType: 'inventory', 
         sourceIndex: index,
-        sourceType: 'inventory'
+        type: item.type || 'consumable',
+        slot: item.slot || null
       }),
       end: (item, monitor) => {
         const dropResult = monitor.getDropResult();
