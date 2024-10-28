@@ -142,16 +142,22 @@ const ItemMenu = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/80 z-50"
+       className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center"
       onClick={() => setShowItemMenu(null)}
     >
       <div 
         className={`${activeTheme.primary} rounded-lg p-4 w-64 absolute`}
-        onClick={e => e.stopPropagation()}
         style={{
-          left: `${Math.min(menuPosition.x, window.innerWidth - 280)}px`,
-          top: `${Math.min(menuPosition.y, window.innerHeight - 300)}px`
+          width: "fit-content",   // Keeps menu width as per content
+          maxWidth: "100%",       // Prevents it from going out of bounds
+          maxHeight: "100%",      // Keeps menu within the viewport
+          overflow: "auto"        // Allows scrolling if content overflows
         }}
+        onClick={e => e.stopPropagation()}
+        // style={{
+        //   left: `${Math.min(menuPosition.x, window.innerWidth - 280)}px`,
+        //   top: `${Math.min(menuPosition.y, window.innerHeight - 300)}px`
+        // }}
       >
         {/* Use Item Button */}
         <button
