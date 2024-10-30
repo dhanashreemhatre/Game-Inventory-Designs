@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import {
   Settings,
-  X,
   User,
-  Trash2,
-  ArrowLeft,
-  Layout,
-  Palette,
-  Box,
   Zap,
   Package,
 } from "lucide-react";
@@ -30,12 +24,6 @@ import {
   armor,
 } from "./images/images";
 
-const ItemTypes = {
-  INVENTORY_ITEM: "inventoryItem",
-  QUICKSLOT_ITEM: "quickslotItem",
-  GROUND_ITEM: "groundItem",
-  CLOTHING_ITEM: "clothingItem",
-};
 
 const equipmentImages = {
   hat: hat,
@@ -257,10 +245,6 @@ export default function AestheticInventory() {
     }
   };
 
-  // Helper function to check if items can stack
-  const canItemsStack = (item1, item2) => {
-    return item1 && item2 && item1.id === item2.id;
-  };
 
   const handleDropToGround = (item) => {
     if (!item) return;
@@ -450,7 +434,7 @@ export default function AestheticInventory() {
   };
 
   return (
-    <DndProvider backend={HTML5Backend}>
+    <DndProvider backend={HTML5Backend} >
       <div
         className={`${currentLayout.container} ${currentLayout.containerStyle}`}
       >

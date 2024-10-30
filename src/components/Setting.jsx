@@ -1,15 +1,8 @@
 import React, { useState } from 'react';
-import { Settings, X, Layout, Palette, Box } from 'lucide-react';
-import { HexColorPicker } from 'react-colorful';
+import {  X, Layout, Palette, Box } from 'lucide-react';
 import ThemeSelector from './ui/ThemeSelector';
 
-// Helper function to convert hex to rgba
-const hexToRgba = (hex, alpha = 1) => {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
+
 const defaultThemes = {
   Default: {
     primary: 'bg-gray-900',
@@ -46,53 +39,6 @@ const defaultLayouts = {
   }
 };
 
-
-const ColorPicker = ({ label, color, onChange }) => {
-  const [showPicker, setShowPicker] = useState(false);
-  const [currentColor, setCurrentColor] = useState(color.split('/')[0] || '#000000');
-  const [opacity, setOpacity] = useState(parseInt(color.split('/')[1] || '100'));
-
-  const handleColorChange = (newColor) => {
-    setCurrentColor(newColor);
-    onChange(`${newColor}/${opacity}`);
-  };
-
-  const handleOpacityChange = (newOpacity) => {
-    setOpacity(newOpacity);
-    onChange(`${currentColor}/${newOpacity}`);
-  };
-
-  return (
-    <div className="relative mb-4">
-      <div className="flex items-center gap-4">
-        <label className="w-32 text-sm  text-gray-100/55">{label}:</label>
-        <div
-          className="w-10 h-10 rounded cursor-pointer border border-gray-600"
-          style={{ backgroundColor: hexToRgba(currentColor, opacity / 100) }}
-          onClick={() => setShowPicker(!showPicker)}
-        />
-        <input 
-          type="range" 
-          min="0" 
-          max="100" 
-          value={opacity} 
-          onChange={(e) => handleOpacityChange(e.target.value)}
-          className="flex-1"
-        />
-        <span className="w-12 text-right">{opacity}%</span>
-      </div>
-      
-      {showPicker && (
-        <div className="absolute z-10 mt-2">
-          <div className="fixed inset-0" onClick={() => setShowPicker(false)} />
-          <div className="relative z-20 ">
-            <HexColorPicker color={currentColor} onChange={handleColorChange} />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
 
 
 const VisualLayoutEditor = ({ layout: selectedLayout, onLayoutChange }) => {

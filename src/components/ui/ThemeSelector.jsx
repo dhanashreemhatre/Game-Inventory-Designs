@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Check, Palette } from 'lucide-react';
 
 const defaultThemes = {

@@ -1,4 +1,4 @@
-import {  useDrag, useDrop } from 'react-dnd';
+import {  useDrag } from 'react-dnd';
 
 const ItemTypes = {
     INVENTORY_ITEM: 'inventoryItem',
