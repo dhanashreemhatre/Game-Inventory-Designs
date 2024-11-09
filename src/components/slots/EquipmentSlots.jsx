@@ -1,63 +1,54 @@
-import {  useDrop } from 'react-dnd';
-
-const ItemTypes = {
-  INVENTORY_ITEM: 'inventoryItem',
-  QUICKSLOT_ITEM: 'quickslotItem',
-  GROUND_ITEM: 'groundItem',
-  CLOTHING_ITEM: 'clothingItem'
+import ItemTooltip from "../ui/ItemToolTip";
+import React from "react";
+const EquipmentSlot = ({
+  slotName,
+  theme,
+  image,
+  label,
+  handleEquipItem,
+  equippedItem,
+}) => {
+const [showTooltip, setShowTooltip] = React.useState(false);
+const [tooltipPosition, setTooltipPosition] = React.useState({ x: 0, y: 0 });
+const handleMouseEnter = (e) => {
+  if (!equippedItem) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  setTooltipPosition({
+    x: rect.left + rect.width / 2,
+    y: rect.top,
+  });
+  setShowTooltip(true);
 };
 
-const EquipmentSlot = ({ slotName, theme, image, label, handleEquipItem, equippedItem }) => {
-  const [{ isOver }, drop] = useDrop({
-    accept: [ItemTypes.INVENTORY_ITEM],
-    drop: (item) => {
-      // Return an object containing the drop result
-      const result = handleEquipItem(item, slotName);
-      return { 
-        dropped: true,
-        slotName,
-        success: result
-      };
-    },
-    canDrop: (item) => {
-      return item.type === 'clothing' && item.slot?.toLowerCase() === slotName.toLowerCase();
-    },
-    collect: (monitor) => ({
-      isOver: !!monitor.isOver()
-    })
-  });
+const handleMouseLeave = () => {
+  setShowTooltip(false);
+};
+
 
   return (
-    <div 
-      ref={drop} 
-      className={`flex items-center gap-2 p-1 ${isOver ? 'bg-blue-500/20' : ''}`}
+    <div
+      data-droppable="true"
+      data-type="equipment"
+      data-slot-name={slotName}
+      className={`${theme.secondary} ${theme.hover} p-2 aspect-square rounded flex items-center justify-center gap-2`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
-      <div className={`
-        ${theme.secondary} 
-        ${theme.hover} 
-        w-14 
-        h-14 
-        rounded  
-        flex 
-        items-center 
-        justify-center 
-        transition-colors 
-        duration-200
-        relative
-        ${isOver && 'border-2 border-blue-500'}
-      `}>
-        <img 
-          src={image} 
-          alt={label} 
-          className="w-10 h-10 object-contain" 
-        />
-        {equippedItem && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-            <span className="text-2xl">{equippedItem.icon}</span>
-          </div>
-        )}
-      </div>
-   
+      
+
+      {equippedItem ? (
+        <div className="flex items-center gap-1">
+          <span className="text-xl">{equippedItem.icon}</span>
+        </div>
+      ):
+     ( <div className="w-12 h-12 flex items-center justify-center">
+      <img src={image} alt={label} className="w-12 h-12 opacity-50" />
+    </div>)}
+    {showTooltip && equippedItem && (
+        <div style={{ position: 'fixed', left: tooltipPosition.x, top: tooltipPosition.y }}>
+          <ItemTooltip item={equippedItem} />
+        </div>
+      )}
     </div>
   );
 };

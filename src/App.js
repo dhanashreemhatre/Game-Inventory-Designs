@@ -1,13 +1,14 @@
 import AestheticInventory from "./components/Inventory2";
-import './App.css';
-
+import { DragProvider } from "./DragContext";
+import "./App.css";
 
 function App() {
   return (
-    <div className="App" id="app">
-     <AestheticInventory/>
-
-    </div>
+    <DragProvider>
+      <div className="App" id="app">
+        <AestheticInventory />
+      </div>
+    </DragProvider>
   );
 }
 
